@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "tsc: build - backend",
+      "type": "typescript",
+      "tsconfig": "backend/tsconfig.json",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "tsc: build - frontend",
+      "type": "typescript",
+      "tsconfig": "frontend/tsconfig.json",
+      "problemMatcher": ["$tsc"],
+      "group": "build",
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    }
+  ]
+}

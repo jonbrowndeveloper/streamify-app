@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/src/server.ts",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-r", "${workspaceFolder}/backend/node_modules/ts-node/register"],
+      "preLaunchTask": "tsc: build - backend",
+      "outFiles": ["${workspaceFolder}/backend/dist/**/*.js"],
+      "envFile": "${workspaceFolder}/backend/.env.local",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Debug Frontend",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/frontend",
+      "envFile": "${workspaceFolder}/frontend/.env.local",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '3000:3000'
+  #   depends_on:
+  #     - backend
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - NODE_ENV=production
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '5000:5000'
+  #   depends_on:
+  #     - db
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - NODE_ENV=production
+  #   volumes:
+  #     - e_video:/mnt/videos
+
+  db:
+    image: postgres:latest
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=moviedb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+  e_video:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: E:/Video

@@ -1,0 +1,28 @@
+{
+  "name": "movie-streaming-app-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "cross-env NODE_ENV=production next start",
+    "start:local": "cross-env NODE_ENV=development next start"
+  },
+  "dependencies": {
+    "axios": "latest",
+    "dotenv": "^10.0.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "@mui/material": "latest",
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
+    "next-auth": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/react": "latest",
+    "@types/node": "latest",
+    "cross-env": "^7.0.3"
+  }
+}
