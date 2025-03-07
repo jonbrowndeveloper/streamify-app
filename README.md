@@ -1,4 +1,4 @@
-# Movie Streaming Application
+# Streamify
 
 This is a full-stack movie streaming application built using Next.js for the frontend and Node.js with Express for the backend. The application utilizes PostgreSQL as the database and incorporates various features for video streaming and management.
 
