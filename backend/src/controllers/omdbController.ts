@@ -29,10 +29,42 @@ interface OmdbApiResponse {
   Response: string;
   Error?: string;
   ratings?: {
-    source: string;
-    value: string;
+    Source: string;
+    Value: string;
   }[];
 }
+
+const transformOmdbData = (data: OmdbApiResponse) => ({
+  title: data.Title,
+  year: data.Year,
+  rated: data.Rated,
+  released: data.Released,
+  runtime: data.Runtime,
+  genre: data.Genre,
+  director: data.Director,
+  writer: data.Writer,
+  actors: data.Actors,
+  plot: data.Plot,
+  language: data.Language,
+  country: data.Country,
+  awards: data.Awards,
+  poster: data.Poster,
+  metascore: data.Metascore,
+  imdbRating: data.imdbRating,
+  imdbVotes: data.imdbVotes,
+  imdbID: data.imdbID,
+  type: data.Type,
+  dvd: data.DVD,
+  boxOffice: data.BoxOffice,
+  production: data.Production,
+  website: data.Website,
+  response: data.Response,
+  error: data.Error,
+  ratings: data.ratings?.map(rating => ({
+    source: rating.Source,
+    value: rating.Value,
+  })),
+});
 
 export const getOmdbData = async (req: Request, res: Response) => {
   let updatedCount = 0;
@@ -50,21 +82,20 @@ export const getOmdbData = async (req: Request, res: Response) => {
         `http://www.omdbapi.com/?t=${encodeURIComponent(video.name)}&apikey=23fb5088&r=json&y=${video.movieYear}`
       );
 
-
-
-      await video.update({ omdbData: response.data });
+      const transformedData = transformOmdbData(response.data);
+      await video.update({ omdbData: transformedData });
       updatedCount++;
       res.write(`data: ${JSON.stringify({ updatedCount, total: videos.length })}\n\n`);
     }
 
     res.write(`data: ${JSON.stringify({ message: `OMDB data fetched and updated successfully for ${updatedCount} videos.` })}\n\n`);
     res.end();
-  } catch (error : any) {
+  } catch (error: any) {
     if (error.response?.data?.Error === 'Request limit reached!') {
       res.write(`data: ${JSON.stringify({ message: `OMDB API request limit reached. Updated ${updatedCount} videos.` })}\n\n`);
       res.end();
       return;
-    }else if (error instanceof Error) {
+    } else if (error instanceof Error) {
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });

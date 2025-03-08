@@ -31,6 +31,7 @@ export interface Video {
       production?: string;
       website?: string;
       response?: string;
+      error?: string;
       ratings?: {
         source: string;
         value: string;

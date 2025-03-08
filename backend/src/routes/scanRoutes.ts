@@ -8,9 +8,9 @@ router.post('/scan', async (req, res) => {
     const { totalVideosFound, totalVideosInserted, errors } = await scanAndInsertVideos();
     res.status(200).json({
       message: 'Videos scanned and inserted successfully',
-      videosfound: totalVideosFound,
-      videosInsertedToDB: totalVideosInserted,
-      errors: errors
+      totalVideosFound,
+      totalVideosInserted,
+      errors
     });
   } catch (error) {
     if (error instanceof Error) {

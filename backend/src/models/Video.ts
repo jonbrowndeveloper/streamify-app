@@ -34,6 +34,7 @@ class Video extends Model {
     production?: string;
     website?: string;
     response?: string;
+    error?: string;
     ratings?: {
       source: string;
       value: string;
