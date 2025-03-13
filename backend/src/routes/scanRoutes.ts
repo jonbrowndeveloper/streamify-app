@@ -1,23 +1,22 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { scanAndInsertVideos } from '../services/videoService';
 
 const router = Router();
 
-router.post('/scan', async (req, res) => {
+router.get('/scan', async (req, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
   try {
-    const { totalVideosFound, totalVideosInserted, errors } = await scanAndInsertVideos();
-    res.status(200).json({
-      message: 'Videos scanned and inserted successfully',
-      totalVideosFound,
-      totalVideosInserted,
-      errors
-    });
+    await scanAndInsertVideos(res);
   } catch (error) {
     if (error instanceof Error) {
-      res.status(500).json({ error: error.message });
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     } else {
-      res.status(500).json({ error: 'An unknown error occurred' });
+      res.write(`data: ${JSON.stringify({ error: 'An unknown error occurred' })}\n\n`);
     }
+    res.end();
   }
 });
 

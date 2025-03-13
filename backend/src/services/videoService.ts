@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Response } from 'express';
 import Video from '../models/Video';
 
 const VIDEO_DIRECTORIES = [
@@ -37,10 +38,14 @@ const parseFilename = (filename: string) => {
   };
 };
 
-export const scanAndInsertVideos = async () => {
+export const scanAndInsertVideos = async (res: Response) => {
   let totalVideosFound = 0;
   let totalVideosInserted = 0;
   const errors: { file: string; error: string }[] = [];
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
   for (const dir of VIDEO_DIRECTORIES) {
     const files = fs.readdirSync(dir);
@@ -73,8 +78,11 @@ export const scanAndInsertVideos = async () => {
         console.error('Skipping file...');
         errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
       }
+
+      res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted })}\n\n`);
     }
   }
 
-  return { totalVideosFound, totalVideosInserted, errors };
+  res.write(`data: ${JSON.stringify({ message: 'Scan complete', totalVideosFound, totalVideosInserted, errors })}\n\n`);
+  res.end();
 };

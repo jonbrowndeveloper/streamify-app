@@ -13,9 +13,11 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
         <Typography variant="h5" component="div">
           {video.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {video.actors.join(', ')}
-        </Typography>
+        {video.actors && (
+          <Typography variant="body2" color="text.secondary">
+            {video.actors.join(', ')}
+          </Typography>
+        )}
         <Typography variant="body2" color="text.secondary">
           {video.movieYear}
         </Typography>

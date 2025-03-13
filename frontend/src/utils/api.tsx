@@ -23,7 +23,7 @@ export const deleteVideo = async (id: string): Promise<void> => {
 };
 
 export const fetchOmdbData = async (): Promise<{ message: string }> => {
-  const response = await axios.get(`${API_URL}/api/omdb`);
+  const response = await axios.get(`${API_URL}/api/getOMDBData`);
   return response.data;
 };
 

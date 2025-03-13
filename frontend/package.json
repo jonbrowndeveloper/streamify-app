@@ -9,20 +9,22 @@
     "start:local": "cross-env NODE_ENV=development next start"
   },
   "dependencies": {
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
+    "@mui/icons-material": "^6.4.7",
+    "@mui/material": "latest",
+    "@mui/x-data-grid": "^7.27.3",
     "axios": "latest",
     "dotenv": "^10.0.0",
     "next": "latest",
+    "next-auth": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "@mui/material": "latest",
-    "@emotion/react": "latest",
-    "@emotion/styled": "latest",
-    "next-auth": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "typescript": "latest",
-    "@types/react": "latest",
     "@types/node": "latest",
-    "cross-env": "^7.0.3"
+    "@types/react": "latest",
+    "cross-env": "^7.0.3",
+    "typescript": "latest"
   }
 }
