@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Container, Typography, Button } from '@mui/material';
-import VideoList from '../components/VideoList';
+import { Container, Box } from '@mui/material';
+import Header from '../components/Header';
+import MovieDisplay from '../components/MovieDisplay';
 import AdminPanel from '../components/AdminPanel';
 import { fetchVideos } from '../utils/api';
 import { Video } from '../types';
@@ -19,16 +20,11 @@ const HomePage = () => {
   }, []);
 
   return (
-    <Container>
-      <Typography variant="h2" gutterBottom>
-        Movie Streaming App
-      </Typography>
-      <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-        Open Admin Panel
-      </Button>
-      <VideoList videos={videos} />
+    <Box>
+      <Header onAdminPanelClick={() => setOpen(true)} />
+      <MovieDisplay videos={videos} />
       <AdminPanel open={open} onClose={() => setOpen(false)} />
-    </Container>
+    </Box>
   );
 };
 

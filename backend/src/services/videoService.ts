@@ -23,8 +23,6 @@ const parseFilename = (filename: string) => {
   const actorsStartIndex = filename.indexOf('(') + 1;
   const actorsEndIndex = filename.lastIndexOf(')');
   const actorsAndYear = filename.substring(actorsStartIndex, actorsEndIndex).trim();
-
-  // Use regex to extract the year and separate it from the actors
   const yearMatch = actorsAndYear.match(/(\d{4})$/);
   const movieYear = yearMatch ? parseInt(yearMatch[0], 10) : null;
   const actors = actorsAndYear.substring(0, yearMatch ? yearMatch.index : actorsAndYear.length).split(',').map(actor => actor.trim());
@@ -48,38 +46,49 @@ export const scanAndInsertVideos = async (res: Response) => {
   res.setHeader('Connection', 'keep-alive');
 
   for (const dir of VIDEO_DIRECTORIES) {
-    const files = fs.readdirSync(dir);
-    totalVideosFound += files.length;
+    try {
+      const files = fs.readdirSync(dir);
+      totalVideosFound += files.length;
 
-    for (const file of files) {
-      const ext = path.extname(file).toLowerCase();
-      if (!['.mp4', '.m4v', '.mkv', '.webm'].includes(ext)) {
-        continue;
-      }
-
-      try {
-        const videoData = parseFilename(file);
-        if (videoData) {
-          const existingVideo = await Video.findOne({
-            where: {
-              name: videoData.name,
-              altName: videoData.altName,
-              movieYear: videoData.movieYear,
-            },
-          });
-
-          if (!existingVideo) {
-            await Video.create(videoData);
-            totalVideosInserted++;
-          }
+      for (const file of files) {
+        const ext = path.extname(file).toLowerCase();
+        if (!['.mp4', '.m4v', '.mkv', '.webm'].includes(ext)) {
+          continue;
         }
-      } catch (error) {
-        console.error(`Error processing file ${file}:`, error);
-        console.error('Skipping file...');
-        errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
-      }
 
-      res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted })}\n\n`);
+        try {
+          const videoData = parseFilename(file);
+          if (videoData) {
+            const existingVideo = await Video.findOne({
+              where: {
+                name: videoData.name,
+                altName: videoData.altName,
+                movieYear: videoData.movieYear,
+              },
+            });
+
+            if (!existingVideo) {
+              await Video.create(videoData);
+              totalVideosInserted++;
+            }
+          }
+        } catch (error: any) {
+          console.error(`Error processing file ${file}:`, error);
+          console.error('Skipping file...');
+          errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+
+        res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted })}\n\n`);
+      }
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        res.write(`data: ${JSON.stringify({ error: `Directory not found: ${dir}` })}\n\n`);
+        res.end();
+        return;
+      } else {
+        console.error(`Error reading directory ${dir}:`, error);
+        errors.push({ file: dir, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
     }
   }
 
