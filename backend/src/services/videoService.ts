@@ -2,12 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Response } from 'express';
 import Video from '../models/Video';
-
-const VIDEO_DIRECTORIES = [
-  'E:/Video/Movies',
-  // 'E:/Video/Learning Videos',
-  // 'E:/Video/TV Shows',
-];
+import AppSettings from '../models/AppSettings';
 
 const parseFilename = (filename: string) => {
   const nameEndIndex = filename.indexOf('[') !== -1 ? filename.indexOf('[') : filename.indexOf('(');
@@ -36,7 +31,7 @@ const parseFilename = (filename: string) => {
   };
 };
 
-export const scanAndInsertVideos = async (res: Response) => {
+export const scanAndInsertVideos = async (res: Response, basePath: string) => {
   let totalVideosFound = 0;
   let totalVideosInserted = 0;
   const errors: { file: string; error: string }[] = [];
@@ -45,53 +40,48 @@ export const scanAndInsertVideos = async (res: Response) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  for (const dir of VIDEO_DIRECTORIES) {
-    try {
-      const files = fs.readdirSync(dir);
-      totalVideosFound += files.length;
-
-      for (const file of files) {
-        const ext = path.extname(file).toLowerCase();
-        if (!['.mp4', '.m4v', '.mkv', '.webm'].includes(ext)) {
-          continue;
-        }
-
-        try {
-          const videoData = parseFilename(file);
-          if (videoData) {
-            const existingVideo = await Video.findOne({
-              where: {
-                name: videoData.name,
-                altName: videoData.altName,
-                movieYear: videoData.movieYear,
-              },
-            });
-
-            if (!existingVideo) {
-              await Video.create(videoData);
-              totalVideosInserted++;
-            }
-          }
-        } catch (error: any) {
-          console.error(`Error processing file ${file}:`, error);
-          console.error('Skipping file...');
-          errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
-        }
-
-        res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted })}\n\n`);
-      }
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
-        res.write(`data: ${JSON.stringify({ error: `Directory not found: ${dir}` })}\n\n`);
-        res.end();
-        return;
-      } else {
-        console.error(`Error reading directory ${dir}:`, error);
-        errors.push({ file: dir, error: error instanceof Error ? error.message : 'Unknown error' });
-      }
+  try {
+    const appSettings = await AppSettings.findOne();
+    if (!appSettings) {
+      throw new Error('App settings not found');
     }
-  }
 
-  res.write(`data: ${JSON.stringify({ message: 'Scan complete', totalVideosFound, totalVideosInserted, errors })}\n\n`);
-  res.end();
+    const files = fs.readdirSync(basePath);
+    totalVideosFound += files.length;
+
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      if (!['.mp4', '.m4v', '.mkv', '.webm'].includes(ext)) {
+        continue;
+      }
+
+      try {
+        const videoData = parseFilename(file);
+        const existingVideo = await Video.findOne({
+          where: {
+            name: videoData.name,
+            altName: videoData.altName,
+            movieYear: videoData.movieYear,
+          },
+        });
+
+        if (!existingVideo) {
+          await Video.create({ ...videoData, filepath: file });
+          totalVideosInserted++;
+        }
+      } catch (error: any) {
+        console.error(`Error processing file ${file}:`, error);
+        errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+
+      res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted })}\n\n`);
+    }
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      res.write(`data: ${JSON.stringify({ error: `Directory not found: ${basePath}` })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    }
+    res.end();
+  }
 };
