@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, Typography, CardMedia, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
+import Image from 'next/image';
 import { Video } from '../types';
 
 interface VideoCardProps {
@@ -8,10 +9,26 @@ interface VideoCardProps {
   onClick: () => void;
 }
 
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => {
   const viewportHeight = window.innerHeight;
   const imageHeight = 300;
-  const imageWidth = imageHeight * 0.675;
+  const imageWidth = 205.5;
+  const posterUrl = video.omdbData?.poster && isValidUrl(video.omdbData.poster)
+    ? video.omdbData.poster
+    : '/assets/images/poster-placeholder.png';
+
+  if (!isValidUrl(video.omdbData?.poster || '')) {
+    // TODO show in detail view the poster and how to update the url
+  }
 
   return (
     <Box
@@ -22,23 +39,22 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
         background: 'none',
         padding: 0,
         cursor: 'pointer',
-        transition: 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out',
         transform: isSelected ? 'scale(1.1)' : 'scale(1)', 
       }}
     >
-      <Card className="video-card" sx={{ width: imageWidth }}>
-        <CardMedia
-          component="img"
-          height={imageHeight}
-          image="/assets/images/poster-placeholder.png"
+      <Card className="video-card">
+        <Image
+          src={posterUrl}
           alt={`${video.name} poster`}
+          width={imageWidth}
+          height={imageHeight}
+          objectFit="cover"
         />
         <CardContent sx={{ height: 40, padding: '16px' }}>
           <Typography
             variant="h5"
             component="div"
             sx={{
-              whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               fontSize: '1rem',
