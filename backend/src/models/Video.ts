@@ -1,5 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
-import { sequelize } from '../database';
+import { DataTypes, Model, Sequelize } from 'sequelize';
 
 class Video extends Model {
   public id!: string;
@@ -40,47 +39,49 @@ class Video extends Model {
       value: string;
     }[];
   };
-}
 
-Video.init(
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    dateCreated: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    altName: {
-      type: DataTypes.STRING,
-    },
-    actors: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
-      allowNull: false,
-    },
-    movieYear: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    filepath: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    omdbData: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-    },
-  },
-  {
-    sequelize,
-    modelName: 'Video',
+  static initialize(sequelize: Sequelize) {
+    Video.init(
+      {
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true,
+        },
+        dateCreated: {
+          type: DataTypes.DATE,
+          defaultValue: DataTypes.NOW,
+        },
+        name: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        altName: {
+          type: DataTypes.STRING,
+        },
+        actors: {
+          type: DataTypes.ARRAY(DataTypes.STRING),
+          allowNull: false,
+        },
+        movieYear: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
+        filepath: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        omdbData: {
+          type: DataTypes.JSONB,
+          allowNull: true,
+        },
+      },
+      {
+        sequelize,
+        modelName: 'Video',
+      }
+    );
   }
-);
+}
 
 export default Video;

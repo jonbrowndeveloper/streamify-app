@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Card, CardContent, Typography, Box, IconButton } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, Typography, Box, IconButton, Modal } from '@mui/material';
 import Image from 'next/image';
 import { Video } from '../types';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/Info';
 import VideoInfoModal from './VideoInfoModal';
+import { fetchAppSettings } from '../utils/api';
 
 interface VideoCardProps {
   video: Video;
@@ -23,6 +24,19 @@ const isValidUrl = (url: string) => {
 
 const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => {
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [playModalOpen, setPlayModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoBasePath, setVideoBasePath] = useState<string>('');
+
+  useEffect(() => {
+    const loadAppSettings = async () => {
+      const appSettings = await fetchAppSettings();
+      setVideoBasePath(appSettings.videoBasePath);
+    };
+
+    loadAppSettings();
+  }, []);
 
   const handleInfoClick = () => {
     setInfoModalOpen(true);
@@ -32,15 +46,42 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
     setInfoModalOpen(false);
   };
 
+  const handlePlayClick = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.error);
+      } else {
+        setVideoUrl(response.url);
+        setPlayModalOpen(true);
+      }
+    } catch (err) {
+      setError('An error occurred while trying to fetch the video.');
+    }
+  };
+
+  const handlePlayClose = () => {
+    setPlayModalOpen(false);
+    setError(null);
+  };
+
+  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    const videoElement = event.currentTarget;
+    console.log(videoElement.error);
+    const errorMessage = videoElement.error?.message || 'An error occurred while trying to play the video.';
+    setError(errorMessage);
+  };
+
   const viewportHeight = window.innerHeight;
   const imageHeight = 300;
-  const imageWidth = 205.5;
+  const imageWidth = imageHeight * 0.675;
   const posterUrl = video.omdbData?.poster && isValidUrl(video.omdbData.poster)
     ? video.omdbData.poster
     : '/assets/images/poster-placeholder.png';
 
   if (!isValidUrl(video.omdbData?.poster || '')) {
-    // TODO show in detail view the poster and how to update the url
+    console.log(`Invalid poster URL for movie: ${video.name}, OMDB Data: ${!!video.omdbData}, Poster: ${video.omdbData?.poster}`);
   }
 
   return (
@@ -53,6 +94,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
           background: 'none',
           padding: 0,
           cursor: 'pointer',
+          transition: 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out',
           transform: isSelected ? 'scale(1.1)' : 'scale(1)', 
         }}
       >
@@ -95,7 +137,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
                   alignItems: 'center',
                 }}
               >
-                <IconButton sx={{ color: 'white' }}>
+                <IconButton sx={{ color: 'white', marginRight: 2 }} onClick={handlePlayClick}>
                   <PlayArrowIcon sx={{ fontSize: 40 }} />
                 </IconButton>
                 <IconButton sx={{ color: 'white' }} onClick={handleInfoClick}>
@@ -105,6 +147,37 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
             )}
       </Box>
       <VideoInfoModal video={video} open={infoModalOpen} onClose={handleInfoClose} />
+      <Modal open={playModalOpen} onClose={handlePlayClose}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'calc(100% - 90px)',
+            height: 'calc(100% - 90px)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {error ? (
+            <Typography variant="h6" color="error">
+              {error}
+            </Typography>
+          ) : (
+            <video
+              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}?basePath=${encodeURIComponent(videoBasePath)}`}
+              controls
+              style={{ width: '100%', height: '100%' }}
+              onError={handleVideoError}
+            />
+          )}
+        </Box>
+      </Modal>
     </>
   );
 };

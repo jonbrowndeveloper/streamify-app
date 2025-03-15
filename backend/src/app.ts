@@ -8,7 +8,7 @@ import appSettingsRoutes from './routes/appSettingsRoutes';
 
 const app = express();
 
-app.use(cors()); // Enable CORS
+app.use(cors());
 app.use(bodyParser.json());
 app.use('/api', videoRoutes);
 app.use('/api', omdbRoutes);

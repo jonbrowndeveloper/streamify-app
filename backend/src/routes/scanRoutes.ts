@@ -3,7 +3,7 @@ import { scanAndInsertVideos } from '../services/videoService';
 
 const router = Router();
 
-router.post('/scan', async (req, res: Response) => {
+router.get('/scan', async (req, res: Response) => {
   const basePath = req.query.basePath as string || 'E:/Video/Movies';
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');

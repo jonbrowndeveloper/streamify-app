@@ -10,6 +10,7 @@ export const createVideo = async (req: Request, res: Response) => {
     res.status(201).json(video);
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error creating video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -27,6 +28,7 @@ export const getVideoById = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error fetching video by ID:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -40,6 +42,7 @@ export const getAllVideos = async (req: Request, res: Response) => {
     res.status(200).json(videos);
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error fetching all videos:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -60,6 +63,7 @@ export const updateVideo = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error updating video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -79,6 +83,7 @@ export const deleteVideo = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error deleting video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -93,9 +98,9 @@ export const getVideoStream = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Video not found' });
     }
 
-    const appSettings = await AppSettings.findOne();
+    let appSettings = await AppSettings.findOne();
     if (!appSettings) {
-      return res.status(500).json({ error: 'App settings not found' });
+      appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
     }
 
     const videoPath = path.resolve(appSettings.videoBasePath, video.filepath);
@@ -138,6 +143,7 @@ export const getVideoStream = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.error('Error streaming video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });

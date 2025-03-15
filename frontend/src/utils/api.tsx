@@ -27,7 +27,16 @@ export const fetchOmdbData = async (): Promise<{ message: string }> => {
   return response.data;
 };
 
-export const scanVideos = async (): Promise<{ message: string; videosFound: number; videosInsertedToDB: number; errors: any[] }> => {
-  const response = await axios.post(`${API_URL}/api/scan`);
+export const scanVideos = async (basePath: string): Promise<{ message: string; videosFound: number; videosInsertedToDB: number; errors: any[] }> => {
+  const response = await axios.get(`${API_URL}/api/scan`, { params: { basePath } });
   return response.data;
+};
+
+export const fetchAppSettings = async (): Promise<{ videoBasePath: string }> => {
+  const response = await axios.get(`${API_URL}/api/app-settings`);
+  return response.data;
+};
+
+export const updateAppSettings = async (settings: { videoBasePath: string }): Promise<void> => {
+  await axios.put(`${API_URL}/api/app-settings`, settings);
 };

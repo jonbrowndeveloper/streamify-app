@@ -41,9 +41,9 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    const appSettings = await AppSettings.findOne();
+    let appSettings = await AppSettings.findOne();
     if (!appSettings) {
-      throw new Error('App settings not found');
+      appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
     }
 
     const files = fs.readdirSync(basePath);
@@ -78,10 +78,11 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
     }
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      res.write(`data: ${JSON.stringify({ error: `Directory not found: ${basePath}` })}\n\n`);
+      console.error('Directory not found:', basePath);
     } else {
-      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      console.error('Error scanning videos:', error);
     }
+  } finally {
     res.end();
   }
 };
