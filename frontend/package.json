@@ -16,6 +16,7 @@
     "@mui/x-data-grid": "^7.27.3",
     "axios": "latest",
     "dotenv": "^10.0.0",
+    "fuse.js": "^7.1.0",
     "next": "latest",
     "next-auth": "latest",
     "react": "latest",

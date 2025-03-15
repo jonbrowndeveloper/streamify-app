@@ -73,9 +73,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
     setError(errorMessage);
   };
 
-  const viewportHeight = window.innerHeight;
   const imageHeight = 300;
-  const imageWidth = imageHeight * 0.675;
+  const imageWidth = 200.5;
   const posterUrl = video.omdbData?.poster && isValidUrl(video.omdbData.poster)
     ? video.omdbData.poster
     : '/assets/images/poster-placeholder.png';
@@ -96,9 +95,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
           cursor: 'pointer',
           transition: 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out',
           transform: isSelected ? 'scale(1.1)' : 'scale(1)', 
+          width: imageWidth,
         }}
       >
-        <Card className="video-card">
+        <Card className="video-card" sx={{ width: imageWidth }}>
           <Image
             src={posterUrl}
             alt={`${video.name} poster`}
@@ -113,7 +113,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
               sx={{
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
                 fontSize: '1rem',
+                width: '100%',
               }}
             >
               {video.name}
@@ -124,27 +126,27 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
           </CardContent>
         </Card>
         {isSelected && (
-              <Box
-                width={imageWidth}
-                height={imageHeight}
-                sx={{
-                  position: 'absolute',
-                  top: 9.33,
-                  left: 9.33,
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <IconButton sx={{ color: 'white', marginRight: 2 }} onClick={handlePlayClick}>
-                  <PlayArrowIcon sx={{ fontSize: 40 }} />
-                </IconButton>
-                <IconButton sx={{ color: 'white' }} onClick={handleInfoClick}>
-                  <InfoIcon sx={{ fontSize: 40 }} />
-                </IconButton>
-              </Box>
-            )}
+          <Box
+            width={imageWidth}
+            height={imageHeight}
+            sx={{
+              position: 'absolute',
+              top: 9.33,
+              left: 9.33,
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <IconButton sx={{ color: 'white', marginRight: 2 }} onClick={handlePlayClick}>
+              <PlayArrowIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+            <IconButton sx={{ color: 'white' }} onClick={handleInfoClick}>
+              <InfoIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+          </Box>
+        )}
       </Box>
       <VideoInfoModal video={video} open={infoModalOpen} onClose={handleInfoClose} />
       <Modal open={playModalOpen} onClose={handlePlayClose}>
@@ -172,6 +174,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
             <video
               src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}?basePath=${encodeURIComponent(videoBasePath)}`}
               controls
+              autoPlay
               style={{ width: '100%', height: '100%' }}
               onError={handleVideoError}
             />

@@ -2,10 +2,12 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Box } from '@mui/material';
 import MovieRow from './MovieRow';
 import YearToggleButtons from './YearToggleButtons';
+import SearchResultsGrid from './SearchResultsGrid';
 import { Video } from '../types';
 
 interface MovieDisplayProps {
   videos: Video[];
+  searchQuery: string;
 }
 
 const shuffleArray = (array: Video[]) => {
@@ -18,7 +20,7 @@ const shuffleArray = (array: Video[]) => {
 
 const getDecade = (year: number) => `${Math.floor(year / 10) * 10}s`;
 
-const MovieDisplay: React.FC<MovieDisplayProps> = ({ videos }) => {
+const MovieDisplay: React.FC<MovieDisplayProps> = ({ videos, searchQuery }) => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [shuffledVideos, setShuffledVideos] = useState<Video[]>([]);
   const [selectedDecades, setSelectedDecades] = useState<string[]>([]);
@@ -42,7 +44,14 @@ const MovieDisplay: React.FC<MovieDisplayProps> = ({ videos }) => {
     setSelectedDecades(decades);
   };
 
-  const filteredVideos = shuffledVideos.filter(video => selectedDecades.includes(getDecade(video.movieYear)));
+  const filteredVideos = searchQuery
+    ? videos.filter(video =>
+        video.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        video.actors.some(actor => actor.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        video.omdbData?.director?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        video.omdbData?.writer?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : shuffledVideos.filter(video => selectedDecades.includes(getDecade(video.movieYear)));
 
   const displayedVideoIds = new Set<string>();
 
@@ -53,22 +62,26 @@ const MovieDisplay: React.FC<MovieDisplayProps> = ({ videos }) => {
         selectedDecades={selectedDecades}
         onDecadeChange={handleDecadeChange}
       />
-      {genres.map(genre => {
-        const genreVideos = filteredVideos.filter(video => video.omdbData?.genre?.includes(genre));
-        const uniqueGenreVideos = genreVideos.filter(video => !displayedVideoIds.has(video.id));
-        const duplicateGenreVideos = genreVideos.filter(video => displayedVideoIds.has(video.id));
-        uniqueGenreVideos.forEach(video => displayedVideoIds.add(video.id));
-        const finalGenreVideos = [...uniqueGenreVideos, ...duplicateGenreVideos];
-        return (
-          <MovieRow
-            key={genre}
-            genre={genre}
-            videos={finalGenreVideos}
-            selectedVideoId={selectedVideoId}
-            onVideoSelect={handleVideoSelect}
-          />
-        );
-      })}
+      {searchQuery ? (
+        <SearchResultsGrid videos={filteredVideos} onVideoSelect={handleVideoSelect} />
+      ) : (
+        genres.map(genre => {
+          const genreVideos = filteredVideos.filter(video => video.omdbData?.genre?.includes(genre));
+          const uniqueGenreVideos = genreVideos.filter(video => !displayedVideoIds.has(video.id));
+          const duplicateGenreVideos = genreVideos.filter(video => displayedVideoIds.has(video.id));
+          uniqueGenreVideos.forEach(video => displayedVideoIds.add(video.id));
+          const finalGenreVideos = [...uniqueGenreVideos, ...duplicateGenreVideos];
+          return (
+            <MovieRow
+              key={genre}
+              genre={genre}
+              videos={finalGenreVideos}
+              selectedVideoId={selectedVideoId}
+              onVideoSelect={handleVideoSelect}
+            />
+          );
+        })
+      )}
     </Box>
   );
 };

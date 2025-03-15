@@ -79,7 +79,7 @@ export const getOmdbData = async (req: Request, res: Response) => {
 
     for (const video of videos) {
       const response = await axios.get<OmdbApiResponse>(
-        `http://www.omdbapi.com/?t=${encodeURIComponent(video.name)}&apikey=23fb5088&r=json&y=${video.movieYear}`
+        `http://www.omdbapi.com/?t=${encodeURIComponent(video.name)}&apikey=cef65fad&r=json&y=${video.movieYear}`
       );
 
       const transformedData = transformOmdbData(response.data);
