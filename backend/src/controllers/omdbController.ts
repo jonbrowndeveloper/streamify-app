@@ -88,17 +88,21 @@ export const getOmdbData = async (req: Request, res: Response) => {
       res.write(`data: ${JSON.stringify({ updatedCount, total: videos.length })}\n\n`);
     }
 
-    res.write(`data: ${JSON.stringify({ message: `OMDB data fetched and updated successfully for ${updatedCount} videos.` })}\n\n`);
+    res.write(`event: end\ndata: ${JSON.stringify({ message: `OMDB data fetched and updated successfully for ${updatedCount} videos.` })}\n\n`);
     res.end();
   } catch (error: any) {
     if (error.response?.data?.Error === 'Request limit reached!') {
-      res.write(`data: ${JSON.stringify({ message: `OMDB API request limit reached. Updated ${updatedCount} videos.` })}\n\n`);
+      console.error('OMDB API request limit reached:', error.response.data.Error);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: `OMDB API request limit reached. Updated ${updatedCount} videos.` })}\n\n`);
       res.end();
       return;
     } else if (error instanceof Error) {
-      res.status(500).json({ error: error.message });
+      console.error('Error fetching OMDB data:', error.message);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
     } else {
-      res.status(500).json({ error: 'An unknown error occurred' });
+      console.error('An unknown error occurred:', error);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: 'An unknown error occurred' })}\n\n`);
     }
+    res.end();
   }
 };

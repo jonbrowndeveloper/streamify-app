@@ -14,7 +14,7 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
   const [filter, setFilter] = useState({ genre: '', year: '' });
   const [editVideo, setEditVideo] = useState<Partial<Video> | null>(null);
   const [omdbProgress, setOmdbProgress] = useState<{ updatedCount: number; total: number } | null>(null);
-  const [scanResult, setScanResult] = useState<{ totalVideosFound: number; totalVideosInserted: number } | null>(null);
+  const [scanResult, setScanResult] = useState<{ totalVideosFound: number; totalVideosInserted: number; errors?: { file: string; error: string }[] } | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isFetchingOmdb, setIsFetchingOmdb] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -22,6 +22,15 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
   const [basePath, setBasePath] = useState('E:/Video/Movies');
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadAppSettings = async () => {
+      const appSettings = await fetchAppSettings();
+      setBasePath(appSettings.videoBasePath);
+    };
+
+    loadAppSettings();
+  }, []);
 
   useEffect(() => {
     const loadVideos = async () => {
@@ -38,28 +47,41 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
 
     const eventSource = new EventSource(`${API_URL}/api/getOMDBData`);
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data = JSON.parse((event as MessageEvent).data);
       setOmdbProgress(data);
+      if (data.message) {
+        setAlertMessage(data.message);
+        setAlertSeverity('success');
+      }
     };
 
-    eventSource.onerror = () => {
+    eventSource.addEventListener('error', (event) => {
+      console.error('Error event:', event);
+      try {
+        const errorData = JSON.parse((event as MessageEvent).data);
+        setAlertMessage(`An error occurred while fetching OMDB data: ${errorData.error}`);
+      } catch (e) {
+        setAlertMessage('An unknown error occurred while fetching OMDB data.');
+      }
       eventSource.close();
       setIsFetchingOmdb(false);
-      setAlertMessage('An error occurred while fetching OMDB data.');
       setAlertSeverity('error');
-    };
+    });
 
     eventSource.onopen = () => {
       console.log('Connection to OMDB data fetch event source opened.');
     };
 
-    eventSource.addEventListener('end', async () => {
+    eventSource.addEventListener('end', async (event) => {
       eventSource.close();
       setIsFetchingOmdb(false);
       const videoData = await fetchVideos();
       setVideos(videoData);
-      setAlertMessage('OMDB data fetched and updated successfully.');
-      setAlertSeverity('success');
+      if (!alertMessage) {
+        const endData = JSON.parse((event as MessageEvent).data);
+        setAlertMessage(endData.message);
+        setAlertSeverity('success');
+      }
     });
   };
 
@@ -67,29 +89,39 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
     setIsScanning(true);
     setAlertMessage(null);
 
-    const eventSource = new EventSource(`${API_URL}/api/scan?basePath=${encodeURIComponent(basePath)}`);
+    const eventSource = new EventSource(`${API_URL}/api/scan`);
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data = JSON.parse((event as MessageEvent).data);
       setScanResult(data);
+      if (Array.isArray(data.newVideos)) {
+        setVideos((prevVideos) => [...prevVideos, ...data.newVideos]);
+      }
     };
 
-    eventSource.onerror = () => {
+    eventSource.addEventListener('error', (event) => {
+      console.error('Error event:', event);
+      try {
+        const errorData = JSON.parse((event as MessageEvent).data);
+        setAlertMessage(`An error occurred while scanning videos: ${errorData.error}`);
+      } catch (e) {
+        setAlertMessage('An unknown error occurred while scanning videos.');
+      }
       eventSource.close();
       setIsScanning(false);
-      setAlertMessage('An error occurred while scanning videos.');
       setAlertSeverity('error');
-    };
+    });
 
     eventSource.onopen = () => {
       console.log('Connection to scan event source opened.');
     };
 
-    eventSource.addEventListener('end', async () => {
+    eventSource.addEventListener('end', async (event) => {
       eventSource.close();
       setIsScanning(false);
       const videoData = await fetchVideos();
       setVideos(videoData);
-      setAlertMessage('Scan completed successfully.');
+      const endData = JSON.parse((event as MessageEvent).data);
+      setAlertMessage(endData.message);
       setAlertSeverity('success');
     });
   };
@@ -129,7 +161,7 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
           Admin Panel
         </Typography>
         {alertMessage && (
-          <Alert severity={alertSeverity} sx={{ mt: 2 }}>
+          <Alert severity={alertSeverity || 'error'} sx={{ mt: 2 }}>
             {alertMessage}
           </Alert>
         )}
@@ -145,8 +177,8 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
           sx={{ mt: 2 }}
         />
         <Box sx={{ mt: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-          <Typography variant="h6">Total Videos: {videos.length}</Typography>
-          <Typography variant="h6">Videos with OMDB Data: {videosWithOmdbData}</Typography>
+          <Typography variant="h6">Total Videos: {isScanning && scanResult ? scanResult.totalVideosInserted : videos.length}</Typography>
+          <Typography variant="h6">Videos with OMDB Data: {isFetchingOmdb && omdbProgress ? omdbProgress.updatedCount : videosWithOmdbData}</Typography>
           {videosWithOmdbErrors > 0 && (
             <Typography variant="h6">Videos with OMDB Errors: {videosWithOmdbErrors}</Typography>
           )}

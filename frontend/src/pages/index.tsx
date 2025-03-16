@@ -44,7 +44,7 @@ const HomePage: React.FC = () => {
           onClearSearch={handleClearSearch}
         />
       ) : (
-        <MovieDisplay videos={videos} />
+        <MovieDisplay videos={videos} searchQuery={searchQuery} />
       )}
       <AdminPanel open={open} onClose={() => setOpen(false)} />
     </Box>

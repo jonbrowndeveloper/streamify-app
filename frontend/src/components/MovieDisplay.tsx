@@ -63,7 +63,7 @@ const MovieDisplay: React.FC<MovieDisplayProps> = ({ videos, searchQuery }) => {
         onDecadeChange={handleDecadeChange}
       />
       {searchQuery ? (
-        <SearchResultsGrid videos={filteredVideos} onVideoSelect={handleVideoSelect} />
+        <SearchResultsGrid videos={filteredVideos} onVideoSelect={handleVideoSelect} onClearSearch={() => setSelectedDecades([])} />
       ) : (
         genres.map(genre => {
           const genreVideos = filteredVideos.filter(video => video.omdbData?.genre?.includes(genre));

@@ -91,11 +91,12 @@ export const deleteVideo = async (req: Request, res: Response) => {
   }
 };
 
-export const getVideoStream = async (req: Request, res: Response) => {
+export const getVideoStream = async (req: Request, res: Response): Promise<void> => {
   try {
     const video = await Video.findByPk(req.params.id);
     if (!video) {
-      return res.status(404).json({ error: 'Video not found' });
+      res.status(404).json({ error: 'Video not found' });
+      return;
     }
 
     let appSettings = await AppSettings.findOne();
@@ -105,7 +106,8 @@ export const getVideoStream = async (req: Request, res: Response) => {
 
     const videoPath = path.resolve(appSettings.videoBasePath, video.filepath);
     if (!fs.existsSync(videoPath)) {
-      return res.status(404).json({ error: 'Video file not found on local storage' });
+      res.status(404).json({ error: 'Video file not found on local storage' });
+      return;
     }
 
     const stat = fs.statSync(videoPath);
@@ -122,7 +124,7 @@ export const getVideoStream = async (req: Request, res: Response) => {
         return;
       }
 
-      const chunksize = end - start + 1;
+      const chunksize = (end - start) + 1;
       const file = fs.createReadStream(videoPath, { start, end });
       const head = {
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,

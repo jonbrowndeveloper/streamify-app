@@ -1,12 +1,12 @@
 import app from './app';
 import { sequelize } from './database';
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT as string, 10) || 5000;
 
 const startServer = async () => {
   try {
-    await sequelize.sync({ force: true });
-    app.listen(PORT, () => {
+    await sequelize.sync({ force: false });
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {

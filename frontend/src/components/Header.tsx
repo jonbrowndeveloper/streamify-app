@@ -29,8 +29,8 @@ const Header: React.FC<HeaderProps> = ({ onAdminPanelClick, videos, onSearch, on
     shouldSort: true,
     sortFn: (a, b) => {
       // Prioritize exact matches
-      const exactMatchA = a?.item?.name?.toLowerCase() === searchQuery.toLowerCase();
-      const exactMatchB = b?.item?.name?.toLowerCase() === searchQuery.toLowerCase();
+      const exactMatchA = a?.item?.name?.toString().toLowerCase() === searchQuery.toLowerCase();
+      const exactMatchB = b?.item?.name?.toString().toLowerCase() === searchQuery.toLowerCase();
       if (exactMatchA && !exactMatchB) return -1;
       if (!exactMatchA && exactMatchB) return 1;
       return a.score - b.score;
