@@ -17,34 +17,56 @@ This is a full-stack movie streaming application built using Next.js for the fro
 - **Database**: PostgreSQL
 - **Authentication**: NextAuth.js
 
+## Requirements
+
+- Node.js
+- Docker
+
 ## Project Structure
 
 ```
-movie-streaming-app
-├── backend
-│   ├── src
-│   │   ├── controllers
-│   │   ├── models
-│   │   ├── routes
-│   │   ├── services
-│   │   ├── app.ts
-│   │   └── server.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── README.md
-├── frontend
-│   ├── public
-│   ├── src
-│   │   ├── components
-│   │   ├── pages
-│   │   ├── styles
-│   │   ├── utils
-│   │   └── types
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── README.md
+streamify-app
+├── .gitignore
 ├── docker-compose.yml
-└── README.md
+├── README.md
+├── .vscode/
+│   ├── launch.json
+│   └── tasks.json
+├── backend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── settings.json
+│   ├── tsconfig.json
+│   ├── src/
+│   │   ├── app.ts
+│   │   ├── database.ts
+│   │   ├── loadSettings.ts
+│   │   ├── nms.ts
+│   │   ├── server.ts
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   └── services/
+├── frontend/
+│   ├── Dockerfile
+│   ├── loadSettings.js
+│   ├── next-env.d.ts
+│   ├── next.config.js
+│   ├── package.json
+│   ├── settings.json
+│   ├── tsconfig.json
+│   ├── tsconfig.tsbuildinfo
+│   ├── .next/
+│   │   ├── BUILD_ID
+│   │   ├── build-manifest.json
+│   │   └── ...
+│   ├── public/
+│   │   └── assets/
+│   └── src/
+├── monitor/
+│   ├── package.json
+│   ├── logs/
+│   └── src/
 ```
 
 ## Getting Started
@@ -58,51 +80,73 @@ movie-streaming-app
 ### Installation
 
 1. Clone the repository:
-   ```
+   ```sh
    git clone <repository-url>
-   cd movie-streaming-app
+   cd streamify-app
    ```
 
 2. Set up the backend:
    - Navigate to the backend directory:
-     ```
+     ```sh
      cd backend
      ```
    - Install dependencies:
-     ```
+     ```sh
      npm install
      ```
    - Configure your PostgreSQL database in the environment variables.
 
 3. Set up the frontend:
    - Navigate to the frontend directory:
-     ```
+     ```sh
      cd ../frontend
      ```
    - Install dependencies:
+     ```sh
+     npm install
      ```
+
+4. Set up the monitor:
+   - Navigate to the monitor directory:
+     ```sh
+     cd ../monitor
+     ```
+   - Install dependencies:
+     ```sh
      npm install
      ```
 
 ### Running the Application
 
-- To start the backend server:
+The preferred method to run the application is by using the monitor app. The monitor app can start, stop, and update the backend and frontend services.
+
+- To start the services:
+  ```sh
+  cd monitor
+  npm start
   ```
-  cd backend
-  npm run start
+  Or with a 30 second cron job to run /update
+  ```
+  npm start:cron
   ```
 
-- To start the frontend application:
-  ```
-  cd frontend
-  npm run dev
-  ```
+- Then, in your browser, navigate to `http://localhost:4000/start` to start the backend and frontend services.
+
+- To stop the services:
+  In your browser, navigate to `http://localhost:4000/stop` to stop the backend and frontend services.
+
+- To update the services:
+  In your browser, navigate to `http://localhost:4000/update` to update the backend and frontend services.
+  You can also hit `http://localhost:4000/update?force=true` to force the backend and frontend services to update and restart.
+
+- To view logs:
+  In your browser, navigate to `http://localhost:4000/logs?app=<backend OR frontend>` to view logs for the backend and frontend services.
 
 ### Docker Setup
 
-To run the application using Docker, you can use the provided `docker-compose.yml` file. Run the following command in the root directory of the project:
+To run the Postgress DB using Docker, you can use the provided `docker-compose.yml` file. Run the following command in the root directory of the project:
 
-```
+```sh
 docker-compose up
 ```
 
