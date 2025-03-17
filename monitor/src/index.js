@@ -1,15 +1,29 @@
 const express = require('express');
-const { exec, spawn } = require('child_process');
+const { exec } = require('child_process');
 const cron = require('node-cron');
 const simpleGit = require('simple-git');
 const fs = require('fs');
 const path = require('path');
+const rfs = require('rotating-file-stream');
+const treeKill = require('tree-kill');
 
 const app = express();
 const PORT = 4000;
 const git = simpleGit();
 const LOG_DIR = path.resolve(__dirname, '../logs');
-const NPX_PATH = path.resolve(__dirname, '../../node_modules/.bin/npx');
+
+// Create rotating write streams for backend and frontend logs
+const backendLogStream = rfs.createStream('backend.log', {
+  size: '10M', // Rotate every 10 megabytes
+  interval: '1d', // Rotate daily
+  path: LOG_DIR,
+});
+
+const frontendLogStream = rfs.createStream('frontend.log', {
+  size: '10M', // Rotate every 10 megabytes
+  interval: '1d', // Rotate daily
+  path: LOG_DIR,
+});
 
 let backendProcess = null;
 let frontendProcess = null;
@@ -19,9 +33,20 @@ const logWithTimestamp = (message) => {
   return `[${timestamp}] ${message}`;
 };
 
+const pipeWithTimestamp = (stream, logStream) => {
+  stream.on('data', (data) => {
+    const lines = data.toString().split('\n');
+    lines.forEach((line) => {
+      if (line.trim()) {
+        logStream.write(logWithTimestamp(line) + '\n');
+      }
+    });
+  });
+};
+
 const updateBackend = (callback) => {
   console.log(logWithTimestamp('Updating backend...'));
-  exec('cd ../backend && npm install && npm run build', (error, stdout, stderr) => {
+  exec('cd ../backend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating backend: ${error.message}`));
       callback(error);
@@ -32,17 +57,31 @@ const updateBackend = (callback) => {
 
     // Stop the existing backend process if it exists
     if (backendProcess) {
-      process.kill(-backendProcess.pid);
+      treeKill(backendProcess.pid, 'SIGKILL', (err) => {
+        if (err) {
+          console.error(logWithTimestamp(`Failed to kill backend process: ${err.message}`));
+        } else {
+          console.log(logWithTimestamp('Existing backend process stopped.'));
+        }
+      });
       backendProcess = null;
-      console.log(logWithTimestamp('Existing backend process stopped.'));
     }
 
     // Restart the backend server
-    backendProcess = spawn('npm', ['run', 'start'], {
-      cwd: path.resolve(__dirname, '../backend'),
-      stdio: ['ignore', fs.openSync(path.join(LOG_DIR, 'backend.log'), 'a'), fs.openSync(path.join(LOG_DIR, 'backend.log'), 'a')],
+    const backendCommand = 'npm run start';
+    console.log(logWithTimestamp(`Executing command: ${backendCommand}`));
+    backendProcess = exec(`cmd /c ${backendCommand}`, {
+      cwd: path.resolve(__dirname, '../../backend'),
       detached: true
     });
+
+    pipeWithTimestamp(backendProcess.stdout, backendLogStream);
+    pipeWithTimestamp(backendProcess.stderr, backendLogStream);
+
+    backendProcess.on('error', (err) => {
+      console.error(logWithTimestamp(`Failed to start backend process: ${err.message}`));
+    });
+
     backendProcess.unref();
     console.log(logWithTimestamp('Backend server started.'));
     callback(null);
@@ -51,7 +90,7 @@ const updateBackend = (callback) => {
 
 const updateFrontend = (callback) => {
   console.log(logWithTimestamp('Updating frontend...'));
-  exec('cd ../frontend && npm install && npm run build', (error, stdout, stderr) => {
+  exec('cd ../frontend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating frontend: ${error.message}`));
       callback(error);
@@ -62,17 +101,31 @@ const updateFrontend = (callback) => {
 
     // Stop the existing frontend process if it exists
     if (frontendProcess) {
-      process.kill(-frontendProcess.pid);
+      treeKill(frontendProcess.pid, 'SIGKILL', (err) => {
+        if (err) {
+          console.error(logWithTimestamp(`Failed to kill frontend process: ${err.message}`));
+        } else {
+          console.log(logWithTimestamp('Existing frontend process stopped.'));
+        }
+      });
       frontendProcess = null;
-      console.log(logWithTimestamp('Existing frontend process stopped.'));
     }
 
     // Restart the frontend server
-    frontendProcess = spawn('npm', ['run', 'start'], {
-      cwd: path.resolve(__dirname, '../frontend'),
-      stdio: ['ignore', fs.openSync(path.join(LOG_DIR, 'frontend.log'), 'a'), fs.openSync(path.join(LOG_DIR, 'frontend.log'), 'a')],
+    const frontendCommand = 'npm run start';
+    console.log(logWithTimestamp(`Executing command: ${frontendCommand}`));
+    frontendProcess = exec(`cmd /c ${frontendCommand}`, {
+      cwd: path.resolve(__dirname, '../../frontend'),
       detached: true
     });
+
+    pipeWithTimestamp(frontendProcess.stdout, frontendLogStream);
+    pipeWithTimestamp(frontendProcess.stderr, frontendLogStream);
+
+    frontendProcess.on('error', (err) => {
+      console.error(logWithTimestamp(`Failed to start frontend process: ${err.message}`));
+    });
+
     frontendProcess.unref();
     console.log(logWithTimestamp('Frontend server started.'));
     callback(null);
@@ -111,9 +164,6 @@ const checkForUpdates = async (force = false) => {
   }
 };
 
-// Schedule the cron job to run every 30 seconds
-cron.schedule('*/30 * * * * *', () => checkForUpdates());
-
 app.get('/update', (req, res) => {
   const force = req.query.force === 'true';
   checkForUpdates(force)
@@ -139,7 +189,7 @@ app.get('/logs', (req, res) => {
 
 app.get('/start', (req, res) => {
   // Start PostgreSQL database using Docker Compose
-  exec('docker-compose up -d', (error, stdout, stderr) => {
+  exec('docker-compose up -d', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error starting PostgreSQL: ${error.message}`));
       return res.status(500).send(`Error starting PostgreSQL: ${error.message}`);
@@ -166,28 +216,45 @@ app.get('/start', (req, res) => {
 
 app.get('/stop', (req, res) => {
   if (backendProcess) {
-    process.kill(-backendProcess.pid);
+    treeKill(backendProcess.pid, 'SIGKILL', (err) => {
+      if (err) {
+        console.error(`Failed to kill backend process: ${err.message}`);
+      } else {
+        console.log('Backend service stopped.');
+      }
+    });
     backendProcess = null;
-    console.log(logWithTimestamp('Backend service stopped.'));
   }
 
   if (frontendProcess) {
-    process.kill(-frontendProcess.pid);
+    treeKill(frontendProcess.pid, 'SIGKILL', (err) => {
+      if (err) {
+        console.error(`Failed to kill frontend process: ${err.message}`);
+      } else {
+        console.log('Frontend service stopped.');
+      }
+    });
     frontendProcess = null;
-    console.log(logWithTimestamp('Frontend service stopped.'));
   }
 
-  exec('docker-compose down', (error, stdout, stderr) => {
+  exec('docker-compose down', { shell: true }, (error, stdout, stderr) => {
     if (error) {
-      console.error(logWithTimestamp(`Error stopping PostgreSQL: ${error.message}`));
+      console.error(`Error stopping PostgreSQL: ${error.message}`);
       return res.status(500).send(`Error stopping PostgreSQL: ${error.message}`);
     }
-    console.log(logWithTimestamp(`PostgreSQL stop stdout: ${stdout}`));
-    console.error(logWithTimestamp(`PostgreSQL stop stderr: ${stderr}`));
+    console.log(`PostgreSQL stop stdout: ${stdout}`);
+    console.error(`PostgreSQL stop stderr: ${stderr}`);
     res.status(200).send('Services stopped successfully.');
   });
 });
 
 app.listen(PORT, () => {
-  console.log(logWithTimestamp(`Monitor server is running on port ${PORT}`));
+  console.log(`Monitor server is running on port ${PORT}`);
 });
+
+// Enable cron job if the flag is provided
+if (process.argv.includes('--enable-cron')) {
+  console.log('Cron job enabled.');
+  // Schedule the cron job to run every 30 seconds
+  cron.schedule('*/30 * * * * *', () => checkForUpdates());
+}

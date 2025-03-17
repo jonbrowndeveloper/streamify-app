@@ -1,14 +1,18 @@
 {
-    "name": "streamify-monitor",
-    "version": "1.0.0",
-    "description": "Monitor for the Streamify application",
-    "main": "index.js",
-    "scripts": {
-      "start": "node src/index.js"
-    },
-    "dependencies": {
-      "express": "^4.21.2",
-      "simple-git": "^3.27.0",
-      "node-cron": "^3.0.3"
-    }
+  "name": "streamify-monitor",
+  "version": "1.0.0",
+  "description": "Monitor for the Streamify application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:cron": "node src/index.js --enable-cron"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3",
+    "rotating-file-stream": "^3.2.6",
+    "simple-git": "^3.27.0",
+    "tree-kill": "^1.2.2"
   }
+}
