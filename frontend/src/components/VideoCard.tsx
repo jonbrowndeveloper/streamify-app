@@ -93,8 +93,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
           background: 'none',
           padding: 0,
           cursor: 'pointer',
+          position: 'relative',
           transition: 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out',
-          transform: isSelected ? 'scale(1.1)' : 'scale(1)', 
+          transform: isSelected ? 'scale(1.1)' : 'scale(1)',
           width: imageWidth,
         }}
       >

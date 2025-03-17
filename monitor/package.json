@@ -1,0 +1,14 @@
+{
+    "name": "streamify-monitor",
+    "version": "1.0.0",
+    "description": "Monitor for the Streamify application",
+    "main": "index.js",
+    "scripts": {
+      "start": "node src/index.js"
+    },
+    "dependencies": {
+      "express": "^4.21.2",
+      "simple-git": "^3.27.0",
+      "node-cron": "^3.0.3"
+    }
+  }

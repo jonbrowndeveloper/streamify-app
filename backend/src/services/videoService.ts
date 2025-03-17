@@ -46,7 +46,7 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
       appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
     }
 
-    const files = fs.readdirSync(path.resolve('/mnt/drive', appSettings.videoBasePath.replace('E:/', '')));
+    const files = fs.readdirSync(basePath);
     totalVideosFound += files.length;
 
     for (const file of files) {
@@ -74,8 +74,9 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
         errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
       }
 
-      res.write(`event: end\ndata: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
+      res.write(`data: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
     }
+    res.write(`event: end\ndata: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
       console.error('Directory not found:', basePath);

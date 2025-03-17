@@ -1,0 +1,10 @@
+{
+    "development": {
+      "DATABASE_URL": "postgres://user:password@localhost:5432/moviedb",
+      "PORT": 5000
+    },
+    "production": {
+      "DATABASE_URL": "postgres://user:password@localhost:5432/moviedb",
+      "PORT": 5000
+    }
+  }

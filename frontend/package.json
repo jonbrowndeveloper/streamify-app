@@ -1,12 +1,12 @@
 {
-  "name": "movie-streaming-app-frontend",
+  "name": "streamify-app-frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "cross-env NODE_ENV=production next start",
-    "start:local": "cross-env NODE_ENV=development next start"
+    "start:local": "cross-env NODE_ENV=development next dev"
   },
   "dependencies": {
     "@emotion/react": "latest",

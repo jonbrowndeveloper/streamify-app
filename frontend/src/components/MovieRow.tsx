@@ -74,7 +74,7 @@ const MovieRow: React.FC<MovieRowProps> = ({ genre, videos, selectedVideoId, onV
   };
 
   const Row = ({ index, style }: ListChildComponentProps) => (
-    <Box style={{ ...style, marginRight: 16 }} sx={{ flex: '0 0 auto', transition: 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out', }}>
+    <Box style={{ ...style, marginRight: 16 }}>
       <VideoCard
         video={videos[index]}
         isSelected={videos[index].id === selectedVideoId}

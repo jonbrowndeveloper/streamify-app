@@ -1,3 +1,6 @@
+import loadSettings from './loadSettings';
+loadSettings();
+
 import app from './app';
 import { sequelize } from './database';
 
