@@ -2,7 +2,7 @@ const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const { updateBackend, updateFrontend, logWithTimestamp, pipeWithTimestamp, backendLogStream, frontendLogStream, backendProcess, frontendProcess, treeKill, getSystemMetrics } = require('./utils');
+const { updateBackend, updateFrontend, checkForUpdates, logWithTimestamp, pipeWithTimestamp, backendLogStream, frontendLogStream, backendProcess, frontendProcess, treeKill, getSystemMetrics } = require('./utils');
 const systeminformation = require('systeminformation');
 
 const router = express.Router();
@@ -25,14 +25,14 @@ router.get('/logs', (req, res) => {
 
   fs.readFile(logFile, 'utf8', (err, data) => {
     if (err) {
-      return res.status(500).send('Error reading log file');
+      res.status(500).send('Error reading log file');
     }
     res.send(data);
   });
 });
 
 router.get('/start', (req, res) => {
-  exec('docker-compose up -d', { shell: '/bin/bash' }, (error, stdout, stderr) => {
+  exec('docker-compose up -d', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error starting PostgreSQL: ${error.message}`));
       return res.status(500).send(`Error starting PostgreSQL: ${error.message}`);
@@ -79,7 +79,7 @@ router.get('/stop', (req, res) => {
     frontendProcess = null;
   }
 
-  exec('docker-compose down', { shell: '/bin/bash' }, (error, stdout, stderr) => {
+  exec('docker-compose down', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error stopping PostgreSQL: ${error.message}`);
       return res.status(500).send(`Error stopping PostgreSQL: ${error.message}`);

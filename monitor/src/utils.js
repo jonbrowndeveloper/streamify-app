@@ -124,6 +124,22 @@ const updateFrontend = (callback) => {
   });
 };
 
+const checkForUpdates = (force) => {
+  return new Promise((resolve, reject) => {
+    console.log(logWithTimestamp('Checking for updates...'));
+    exec('git pull', { cwd: path.resolve(__dirname, '../../') }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(logWithTimestamp(`Error checking for updates: ${error.message}`));
+        reject(error);
+        return;
+      }
+      console.log(logWithTimestamp(`Update check stdout: ${stdout}`));
+      console.error(logWithTimestamp(`Update check stderr: ${stderr}`));
+      resolve();
+    });
+  });
+};
+
 const getSystemMetrics = async () => {
   const cpu = await systeminformation.currentLoad();
   const mem = await systeminformation.mem();
@@ -135,6 +151,7 @@ const getSystemMetrics = async () => {
 module.exports = {
   updateBackend,
   updateFrontend,
+  checkForUpdates,
   logWithTimestamp,
   pipeWithTimestamp,
   backendLogStream,
