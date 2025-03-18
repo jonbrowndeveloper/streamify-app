@@ -1,20 +1,12 @@
 import React from 'react';
-import { ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { makeStyles } from '@mui/styles';
+import { ToggleButton, ToggleButtonGroup, Box } from '@mui/material';
+import { styled } from '@mui/system';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  button: {
-    flex: '1 1 auto',
-    margin: theme.spacing(0.5),
-    minWidth: 50,
-    boxSizing: 'border-box',
-  },
+const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
+  flex: '1 1 auto',
+  margin: theme.spacing(0.5),
+  minWidth: 50,
+  boxSizing: 'border-box',
 }));
 
 interface YearToggleButtonsProps {
@@ -24,8 +16,6 @@ interface YearToggleButtonsProps {
 }
 
 const YearToggleButtons: React.FC<YearToggleButtonsProps> = ({ decades, selectedDecades, onDecadeChange }) => {
-  const classes = useStyles();
-
   const handleDecadeChange = (event: React.MouseEvent<HTMLElement>, newDecades: string[]) => {
     if (newDecades.length === 0) {
       // If the only selected decade is clicked again, reselect all decades
@@ -39,17 +29,15 @@ const YearToggleButtons: React.FC<YearToggleButtonsProps> = ({ decades, selected
   };
 
   return (
-    <ToggleButtonGroup
-      value={selectedDecades}
-      onChange={handleDecadeChange}
-      className={classes.root}
-    >
-      {decades.map((decade) => (
-        <ToggleButton key={decade} value={decade} className={classes.button}>
-          {decade}
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+      <ToggleButtonGroup value={selectedDecades} onChange={handleDecadeChange}>
+        {decades.map((decade) => (
+          <StyledToggleButton key={decade} value={decade}>
+            {decade}
+          </StyledToggleButton>
+        ))}
+      </ToggleButtonGroup>
+    </Box>
   );
 };
 

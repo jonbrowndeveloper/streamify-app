@@ -13,6 +13,7 @@
     "@emotion/styled": "latest",
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "latest",
+    "@mui/system": "^6.4.8",
     "@mui/x-data-grid": "^7.27.3",
     "axios": "latest",
     "dotenv": "^10.0.0",
