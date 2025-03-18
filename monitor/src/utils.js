@@ -40,7 +40,7 @@ const pipeWithTimestamp = (stream, logStream) => {
 
 const updateBackend = (callback) => {
   console.log(logWithTimestamp('Updating backend...'));
-  exec('cd ../backend && npm install && npm run build', { shell: '/bin/bash' }, (error, stdout, stderr) => {
+  exec('cd ../backend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating backend: ${error.message}`));
       callback(error);
@@ -65,7 +65,7 @@ const updateBackend = (callback) => {
     backendProcess = exec(backendCommand, {
       cwd: path.resolve(__dirname, '../../backend'),
       detached: true,
-      shell: '/bin/bash'
+      shell: true
     });
 
     pipeWithTimestamp(backendProcess.stdout, backendLogStream);
@@ -83,7 +83,7 @@ const updateBackend = (callback) => {
 
 const updateFrontend = (callback) => {
   console.log(logWithTimestamp('Updating frontend...'));
-  exec('cd ../frontend && npm install && npm run build', { shell: '/bin/bash' }, (error, stdout, stderr) => {
+  exec('cd ../frontend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating frontend: ${error.message}`));
       callback(error);
@@ -108,7 +108,7 @@ const updateFrontend = (callback) => {
     frontendProcess = exec(frontendCommand, {
       cwd: path.resolve(__dirname, '../../frontend'),
       detached: true,
-      shell: '/bin/bash'
+      shell: true
     });
 
     pipeWithTimestamp(frontendProcess.stdout, frontendLogStream);
@@ -124,21 +124,38 @@ const updateFrontend = (callback) => {
   });
 };
 
-const checkForUpdates = (force) => {
-  return new Promise((resolve, reject) => {
-    console.log(logWithTimestamp('Checking for updates...'));
-    exec('git pull', { cwd: path.resolve(__dirname, '../../') }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(logWithTimestamp(`Error checking for updates: ${error.message}`));
-        reject(error);
-        return;
+const checkForUpdates = async (force = false) => {
+    try {
+      console.log(logWithTimestamp('Checking for updates at ' + new Date().toLocaleString()));
+      // Fetch the latest changes from the remote repository
+      await git.fetch();
+  
+      // Check if there are any new commits
+      const status = await git.status();
+      if (force || status.behind > 0) {
+        console.log(logWithTimestamp('Updates available or force update requested. Pulling changes...'));
+        
+        // Pull the latest changes
+        await git.pull();
+  
+        // Update backend and frontend
+        updateBackend((backendError) => {
+          if (!backendError) {
+            updateFrontend((frontendError) => {
+              if (!frontendError) {
+                console.log(logWithTimestamp('Update completed successfully.'));
+              }
+            });
+          }
+        });
+      } else {
+        console.log(logWithTimestamp('No updates available.'));
       }
-      console.log(logWithTimestamp(`Update check stdout: ${stdout}`));
-      console.error(logWithTimestamp(`Update check stderr: ${stderr}`));
-      resolve();
-    });
-  });
-};
+    } catch (error) {
+      console.error(logWithTimestamp('Error checking for updates:', error));
+    }
+  };
+  
 
 const getSystemMetrics = async () => {
   const cpu = await systeminformation.currentLoad();
