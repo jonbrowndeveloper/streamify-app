@@ -252,7 +252,6 @@ app.get('/stop', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Monitor server is running on port ${PORT}`);
-  console.log('Environment Variables:', process.env);
 });
 
 // Enable cron job if the flag is provided
