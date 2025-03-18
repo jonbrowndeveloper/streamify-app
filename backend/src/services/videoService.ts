@@ -31,7 +31,7 @@ const parseFilename = (filename: string) => {
   };
 };
 
-export const scanAndInsertVideos = async (res: Response, basePath: string) => {
+export const scanAndInsertVideos = async (res: Response) => {
   let totalVideosFound = 0;
   let totalVideosInserted = 0;
   const errors: { file: string; error: string }[] = [];
@@ -43,10 +43,10 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
   try {
     let appSettings = await AppSettings.findOne();
     if (!appSettings) {
-      appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
+      appSettings = await AppSettings.create({ videoBasePath: '/mnt/external_drive/Video/Movies' });
     }
 
-    const files = fs.readdirSync(basePath);
+    const files = fs.readdirSync(appSettings.videoBasePath);
     totalVideosFound += files.length;
 
     for (const file of files) {
@@ -79,8 +79,8 @@ export const scanAndInsertVideos = async (res: Response, basePath: string) => {
     res.write(`event: end\ndata: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.error('Directory not found:', basePath);
-      res.write(`event: error\ndata: ${JSON.stringify({ error: 'Directory not found: ' + basePath })}\n\n`);
+      console.error('Directory not found:', appSettings.videoBasePath);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: 'Directory not found: ' + appSettings.videoBasePath })}\n\n`);
     } else {
       console.error('Error scanning videos:', error);
       res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);

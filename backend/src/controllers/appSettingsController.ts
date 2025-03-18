@@ -5,7 +5,7 @@ export const getAppSettings = async (req: Request, res: Response) => {
   try {
     let appSettings = await AppSettings.findOne();
     if (!appSettings) {
-      appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
+      appSettings = await AppSettings.create({ videoBasePath: '/mnt/external_drive/Video/Movies' });
     }
     res.status(200).json(appSettings);
   } catch (error) {

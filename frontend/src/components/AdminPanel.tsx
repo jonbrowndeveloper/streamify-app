@@ -20,7 +20,7 @@ const AdminPanel: React.FC<{ open: boolean; onClose: () => void }> = ({ open, on
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [alertSeverity, setAlertSeverity] = useState<'error' | 'success' | null>(null);
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
-  const [basePath, setBasePath] = useState('E:/Video/Movies');
+  const [basePath, setBasePath] = useState('/mnt/external_drive/Video/Movies');
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
 
   useEffect(() => {

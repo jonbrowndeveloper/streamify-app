@@ -101,7 +101,7 @@ export const getVideoStream = async (req: Request, res: Response): Promise<void>
 
     let appSettings = await AppSettings.findOne();
     if (!appSettings) {
-      appSettings = await AppSettings.create({ videoBasePath: 'E:/Video/Movies' });
+      appSettings = await AppSettings.create({ videoBasePath: '/mnt/external_drive/Video/Movies' });
     }
 
     const videoPath = path.resolve(appSettings.videoBasePath, video.filepath);
