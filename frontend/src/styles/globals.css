@@ -5,12 +5,20 @@
   font-style: normal;
 }
 
-html, body {
+html, body, #__next {
+  width: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Roboto', sans-serif;
-  background-color: #f0f0f0;
-  color: #333;
+  overflow-x: hidden;
+}
+
+/* Ensure the main container and its child elements use the full width of the viewport */
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 a {
@@ -20,12 +28,6 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
 }
 
 .button {
@@ -61,4 +63,26 @@ h1, h2, h3, h4, h5, h6 {
 /* Add custom font class */
 .font-final-frontier {
   font-family: 'Final Frontier Old Style', sans-serif;
+}
+
+/* Ensure the decade/year buttons are responsive */
+.year-toggle-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.year-toggle-buttons .MuiToggleButtonGroup-root {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.year-toggle-buttons .MuiToggleButton-root {
+  flex: 1 1 auto;
+  margin: 5px;
+  min-width: 50px;
+  box-sizing: border-box;
 }

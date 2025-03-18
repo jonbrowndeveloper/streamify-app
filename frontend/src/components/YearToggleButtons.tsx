@@ -1,5 +1,21 @@
 import React from 'react';
-import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { makeStyles } from '@mui/styles';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  button: {
+    flex: '1 1 auto',
+    margin: theme.spacing(0.5),
+    minWidth: 50,
+    boxSizing: 'border-box',
+  },
+}));
 
 interface YearToggleButtonsProps {
   decades: string[];
@@ -8,33 +24,32 @@ interface YearToggleButtonsProps {
 }
 
 const YearToggleButtons: React.FC<YearToggleButtonsProps> = ({ decades, selectedDecades, onDecadeChange }) => {
+  const classes = useStyles();
+
   const handleDecadeChange = (event: React.MouseEvent<HTMLElement>, newDecades: string[]) => {
     if (newDecades.length === 0) {
       // If the only selected decade is clicked again, reselect all decades
       onDecadeChange(decades);
     } else if (newDecades.length === 1 && selectedDecades.length !== 1) {
-      // If a single decade is selected, deselect all others
-      onDecadeChange(newDecades);
+      // If only one decade is selected, deselect it
+      onDecadeChange([]);
     } else {
-      // Otherwise, update the selected decades
       onDecadeChange(newDecades);
     }
   };
 
   return (
-    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 2 }}>
-      <ToggleButtonGroup
-        value={selectedDecades}
-        onChange={handleDecadeChange}
-        aria-label="decade selection"
-      >
-        {decades.sort().map(decade => (
-          <ToggleButton key={decade} value={decade} aria-label={decade}>
-            {decade.endsWith('s') ? decade.slice(0, -1) : decade}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
-    </Box>
+    <ToggleButtonGroup
+      value={selectedDecades}
+      onChange={handleDecadeChange}
+      className={classes.root}
+    >
+      {decades.map((decade) => (
+        <ToggleButton key={decade} value={decade} className={classes.button}>
+          {decade}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
   );
 };
 
