@@ -35,13 +35,14 @@ export const scanAndInsertVideos = async (res: Response) => {
   let totalVideosFound = 0;
   let totalVideosInserted = 0;
   const errors: { file: string; error: string }[] = [];
+  let appSettings: AppSettings | null = null;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    let appSettings = await AppSettings.findOne();
+    appSettings = await AppSettings.findOne();
     if (!appSettings) {
       appSettings = await AppSettings.create({ videoBasePath: '/mnt/external_drive/Video/Movies' });
     }
@@ -79,8 +80,8 @@ export const scanAndInsertVideos = async (res: Response) => {
     res.write(`event: end\ndata: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.error('Directory not found:', appSettings.videoBasePath);
-      res.write(`event: error\ndata: ${JSON.stringify({ error: 'Directory not found: ' + appSettings.videoBasePath })}\n\n`);
+      console.error('Directory not found:', appSettings?.videoBasePath);
+      res.write(`event: error\ndata: ${JSON.stringify({ error: 'Directory not found: ' + appSettings?.videoBasePath })}\n\n`);
     } else {
       console.error('Error scanning videos:', error);
       res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
