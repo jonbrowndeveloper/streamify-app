@@ -8,11 +8,15 @@
     "start:cron": "node src/index.js --enable-cron"
   },
   "dependencies": {
+    "chart.js": "^4.4.8",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "cross-spawn": "^7.0.6",
     "express": "^4.21.2",
     "node-cron": "^3.0.3",
     "rotating-file-stream": "^3.2.6",
     "simple-git": "^3.27.0",
+    "socket.io": "^4.8.1",
+    "systeminformation": "^5.25.11",
     "tree-kill": "^1.2.2"
   }
 }

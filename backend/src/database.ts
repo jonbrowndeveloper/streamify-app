@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import Video from './models/Video';
 import AppSettings from './models/AppSettings';
+import logger from './logger';
 
 dotenv.config({ path: process.env.NODE_ENV === 'production' ? '.env' : '.env.local' });
 
@@ -13,7 +14,7 @@ if (!databaseUrl) {
 
 export const sequelize = new Sequelize(databaseUrl, {
   dialect: 'postgres',
-  logging: false,
+  logging: (msg) => logger.info(`DB: ${msg}`)
 });
 
 const models = [Video, AppSettings];

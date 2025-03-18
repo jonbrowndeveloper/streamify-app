@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .logs { margin-top: 20px; }
+    .log-container { max-height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+    .metrics { margin-top: 20px; }
+    .buttons { margin-top: 20px; }
+    .disk-container { margin-top: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+    .disk-container h3 { margin-top: 0; }
+    textarea { width: 100%; height: 200px; }
+    canvas { width: 100%; height: 200px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Monitor</h1>
+    <div class="buttons">
+      <button onclick="fetch('/start').then(() => alert('Started'))">Start</button>
+      <button onclick="fetch('/stop').then(() => alert('Stopped'))">Stop</button>
+      <button onclick="fetch('/update').then(() => alert('Updated'))">Update</button>
+      <button onclick="fetch('/update?force=true').then(() => alert('Force Updated'))">Force Update</button>
+    </div>
+    <div class="logs">
+      <h2>Backend Logs</h2>
+      <div class="log-container" id="backendLogs"></div>
+      <button onclick="window.location.href='/logs?app=backend'">View Full Logs</button>
+      <h2>Frontend Logs</h2>
+      <div class="log-container" id="frontendLogs"></div>
+      <button onclick="window.location.href='/logs?app=frontend'">View Full Logs</button>
+    </div>
+    <div class="metrics">
+      <h2>System Metrics</h2>
+      <canvas id="cpuChart"></canvas>
+      <div id="memoryInfo"></div>
+      <canvas id="memChart"></canvas>
+      <div id="diskCharts"></div>
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script>
+    const socket = io();
+
+    const cpuChartCtx = document.getElementById('cpuChart').getContext('2d');
+    const memChartCtx = document.getElementById('memChart').getContext('2d');
+    const diskChartsContainer = document.getElementById('diskCharts');
+    const memoryInfo = document.getElementById('memoryInfo');
+
+    const cpuChart = new Chart(cpuChartCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'CPU Usage (%)',
+          data: [],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          fill: false
+        }]
+      },
+      options: {
+        scales: {
+          x: { type: 'time', time: { unit: 'second' } },
+          y: { beginAtZero: true, max: 100 }
+        }
+      }
+    });
+
+    const memChart = new Chart(memChartCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Memory Usage (%)',
+          data: [],
+          borderColor: 'rgba(153, 102, 255, 1)',
+          borderWidth: 1,
+          fill: false
+        }]
+      },
+      options: {
+        scales: {
+          x: { type: 'time', time: { unit: 'second' } },
+          y: { beginAtZero: true, max: 100 }
+        }
+      }
+    });
+
+    const diskCharts = {};
+
+    socket.on('metrics', (metrics) => {
+      const now = new Date();
+      const cpuUsage = metrics.cpu.currentLoad;
+      const memUsedPercent = (metrics.mem.used / metrics.mem.total) * 100;
+      const totalMemoryGB = (metrics.mem.total / (1024 * 1024 * 1024)).toFixed(2);
+
+      memoryInfo.innerHTML = `Total Memory: ${totalMemoryGB} GB`;
+
+      cpuChart.data.labels.push(now);
+      cpuChart.data.datasets[0].data.push(cpuUsage);
+      if (cpuChart.data.labels.length > 60) {
+        cpuChart.data.labels.shift();
+        cpuChart.data.datasets[0].data.shift();
+      }
+      cpuChart.update();
+
+      memChart.data.labels.push(now);
+      memChart.data.datasets[0].data.push(memUsedPercent);
+      if (memChart.data.labels.length > 60) {
+        memChart.data.labels.shift();
+        memChart.data.datasets[0].data.shift();
+      }
+      memChart.update();
+
+      metrics.fsSize.forEach((disk, index) => {
+        const diskId = `disk${index}`;
+        let container = document.getElementById(diskId);
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'disk-container';
+          container.id = diskId;
+          container.innerHTML = `<h3>Disk: ${disk.fs}</h3>`;
+          diskChartsContainer.appendChild(container);
+
+          const activeTimeCanvas = document.createElement('canvas');
+          activeTimeCanvas.id = `${diskId}ActiveTime`;
+          container.appendChild(activeTimeCanvas);
+          const activeTimeCtx = activeTimeCanvas.getContext('2d');
+          diskCharts[`${diskId}ActiveTime`] = new Chart(activeTimeCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'Active Time (%)',
+                data: [],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                fill: false
+              }]
+            },
+            options: {
+              scales: {
+                x: { type: 'time', time: { unit: 'second' } },
+                y: { beginAtZero: true, max: 100 }
+              }
+            }
+          });
+
+          const transferRateCanvas = document.createElement('canvas');
+          transferRateCanvas.id = `${diskId}TransferRate`;
+          container.appendChild(transferRateCanvas);
+          const transferRateCtx = transferRateCanvas.getContext('2d');
+          diskCharts[`${diskId}TransferRate`] = new Chart(transferRateCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'Disk Transfer Rate (MB/s)',
+                data: [],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                fill: false
+              }]
+            },
+            options: {
+              scales: {
+                x: { type: 'time', time: { unit: 'second' } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+
+          const avgResponseTimeCanvas = document.createElement('canvas');
+          avgResponseTimeCanvas.id = `${diskId}AvgResponseTime`;
+          container.appendChild(avgResponseTimeCanvas);
+          const avgResponseTimeCtx = avgResponseTimeCanvas.getContext('2d');
+          diskCharts[`${diskId}AvgResponseTime`] = new Chart(avgResponseTimeCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'Average Response Time (ms)',
+                data: [],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                fill: false
+              }]
+            },
+            options: {
+              scales: {
+                x: { type: 'time', time: { unit: 'second' } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+
+          const readSpeedCanvas = document.createElement('canvas');
+          readSpeedCanvas.id = `${diskId}ReadSpeed`;
+          container.appendChild(readSpeedCanvas);
+          const readSpeedCtx = readSpeedCanvas.getContext('2d');
+          diskCharts[`${diskId}ReadSpeed`] = new Chart(readSpeedCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'Read Speed (MB/s)',
+                data: [],
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1,
+                fill: false
+              }]
+            },
+            options: {
+              scales: {
+                x: { type: 'time', time: { unit: 'second' } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+
+          const writeSpeedCanvas = document.createElement('canvas');
+          writeSpeedCanvas.id = `${diskId}WriteSpeed`;
+          container.appendChild(writeSpeedCanvas);
+          const writeSpeedCtx = writeSpeedCanvas.getContext('2d');
+          diskCharts[`${diskId}WriteSpeed`] = new Chart(writeSpeedCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'Write Speed (MB/s)',
+                data: [],
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+                fill: false
+              }]
+            },
+            options: {
+              scales: {
+                x: { type: 'time', time: { unit: 'second' } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+
+        const diskActiveTime = disk.activeTime;
+        const diskTransferRate = disk.transferRate;
+        const diskAvgResponseTime = disk.avgResponseTime;
+        const diskReadSpeed = disk.readSpeed;
+        const diskWriteSpeed = disk.writeSpeed;
+
+        const activeTimeChart = diskCharts[`${diskId}ActiveTime`];
+        activeTimeChart.data.labels.push(now);
+        activeTimeChart.data.datasets[0].data.push(diskActiveTime);
+        if (activeTimeChart.data.labels.length > 60) {
+          activeTimeChart.data.labels.shift();
+          activeTimeChart.data.datasets[0].data.shift();
+        }
+        activeTimeChart.update();
+
+        const transferRateChart = diskCharts[`${diskId}TransferRate`];
+        transferRateChart.data.labels.push(now);
+        transferRateChart.data.datasets[0].data.push(diskTransferRate);
+        if (transferRateChart.data.labels.length > 60) {
+          transferRateChart.data.labels.shift();
+          transferRateChart.data.datasets[0].data.shift();
+        }
+        transferRateChart.update();
+
+        const avgResponseTimeChart = diskCharts[`${diskId}AvgResponseTime`];
+        avgResponseTimeChart.data.labels.push(now);
+        avgResponseTimeChart.data.datasets[0].data.push(diskAvgResponseTime);
+        if (avgResponseTimeChart.data.labels.length > 60) {
+          avgResponseTimeChart.data.labels.shift();
+          avgResponseTimeChart.data.datasets[0].data.shift();
+        }
+        avgResponseTimeChart.update();
+
+        const readSpeedChart = diskCharts[`${diskId}ReadSpeed`];
+        readSpeedChart.data.labels.push(now);
+        readSpeedChart.data.datasets[0].data.push(diskReadSpeed);
+        if (readSpeedChart.data.labels.length > 60) {
+          readSpeedChart.data.labels.shift();
+          readSpeedChart.data.datasets[0].data.shift();
+        }
+        readSpeedChart.update();
+
+        const writeSpeedChart = diskCharts[`${diskId}WriteSpeed`];
+        writeSpeedChart.data.labels.push(now);
+        writeSpeedChart.data.datasets[0].data.push(diskWriteSpeed);
+        if (writeSpeedChart.data.labels.length > 60) {
+          writeSpeedChart.data.labels.shift();
+          writeSpeedChart.data.datasets[0].data.shift();
+        }
+        writeSpeedChart.update();
+      });
+    });
+
+    const fetchLogs = async () => {
+      const backendLogs = await fetch('/logs?app=backend').then(res => res.text());
+      const frontendLogs = await fetch('/logs?app=frontend').then(res => res.text());
+      document.getElementById('backendLogs').innerText = backendLogs.split('\n').slice(-100).join('\n');
+      document.getElementById('frontendLogs').innerText = frontendLogs.split('\n').slice(-100).join('\n');
+    };
+
+    fetchLogs();
+    setInterval(fetchLogs, 5000);
+  </script>
+</body>
+</html>
