@@ -46,7 +46,7 @@ const pipeWithTimestamp = (stream, logStream) => {
 
 const updateBackend = (callback) => {
   console.log(logWithTimestamp('Updating backend...'));
-  exec('cd ../backend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
+  exec('cd ../backend && npm install && npm run build', { shell: '/bin/bash' }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating backend: ${error.message}`));
       callback(error);
@@ -70,9 +70,10 @@ const updateBackend = (callback) => {
     // Restart the backend server
     const backendCommand = 'npm run start';
     console.log(logWithTimestamp(`Executing command: ${backendCommand}`));
-    backendProcess = exec(`cmd /c ${backendCommand}`, {
+    backendProcess = exec(backendCommand, {
       cwd: path.resolve(__dirname, '../../backend'),
-      detached: true
+      detached: true,
+      shell: '/bin/bash'
     });
 
     pipeWithTimestamp(backendProcess.stdout, backendLogStream);
@@ -90,7 +91,7 @@ const updateBackend = (callback) => {
 
 const updateFrontend = (callback) => {
   console.log(logWithTimestamp('Updating frontend...'));
-  exec('cd ../frontend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
+  exec('cd ../frontend && npm install && npm run build', { shell: '/bin/bash' }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error updating frontend: ${error.message}`));
       callback(error);
@@ -114,9 +115,10 @@ const updateFrontend = (callback) => {
     // Restart the frontend server
     const frontendCommand = 'npm run start';
     console.log(logWithTimestamp(`Executing command: ${frontendCommand}`));
-    frontendProcess = exec(`cmd /c ${frontendCommand}`, {
+    frontendProcess = exec(frontendCommand, {
       cwd: path.resolve(__dirname, '../../frontend'),
-      detached: true
+      detached: true,
+      shell: '/bin/bash'
     });
 
     pipeWithTimestamp(frontendProcess.stdout, frontendLogStream);
@@ -189,7 +191,7 @@ app.get('/logs', (req, res) => {
 
 app.get('/start', (req, res) => {
   // Start PostgreSQL database using Docker Compose
-  exec('docker-compose up -d', { shell: true }, (error, stdout, stderr) => {
+  exec('docker-compose up -d', { shell: '/bin/bash' }, (error, stdout, stderr) => {
     if (error) {
       console.error(logWithTimestamp(`Error starting PostgreSQL: ${error.message}`));
       return res.status(500).send(`Error starting PostgreSQL: ${error.message}`);
@@ -237,7 +239,7 @@ app.get('/stop', (req, res) => {
     frontendProcess = null;
   }
 
-  exec('docker-compose down', { shell: true }, (error, stdout, stderr) => {
+  exec('docker-compose down', { shell: '/bin/bash' }, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error stopping PostgreSQL: ${error.message}`);
       return res.status(500).send(`Error stopping PostgreSQL: ${error.message}`);
@@ -250,6 +252,7 @@ app.get('/stop', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Monitor server is running on port ${PORT}`);
+  console.log('Environment Variables:', process.env);
 });
 
 // Enable cron job if the flag is provided
