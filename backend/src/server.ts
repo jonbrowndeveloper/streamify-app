@@ -3,6 +3,7 @@ loadSettings();
 
 import app from './app';
 import { sequelize } from './database';
+import logger from './logger';
 
 const PORT = parseInt(process.env.PORT as string, 10) || 5000;
 
@@ -13,7 +14,7 @@ const startServer = async () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Unable to start the server:', error);
+    logger.error('Unable to start the server:', error);
   }
 };
 

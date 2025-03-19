@@ -3,6 +3,7 @@ import Video from '../models/Video';
 import path from 'path';
 import fs from 'fs';
 import AppSettings from '../models/AppSettings';
+import logger from '../logger';
 
 export const createVideo = async (req: Request, res: Response) => {
   try {
@@ -10,7 +11,7 @@ export const createVideo = async (req: Request, res: Response) => {
     res.status(201).json(video);
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error creating video:', error.message);
+      logger.error('Error creating video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -28,7 +29,7 @@ export const getVideoById = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error fetching video by ID:', error.message);
+      logger.error('Error fetching video by ID:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -42,7 +43,7 @@ export const getAllVideos = async (req: Request, res: Response) => {
     res.status(200).json(videos);
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error fetching all videos:', error.message);
+      logger.error('Error fetching all videos:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -63,7 +64,7 @@ export const updateVideo = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error updating video:', error.message);
+      logger.error('Error updating video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -83,7 +84,7 @@ export const deleteVideo = async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error deleting video:', error.message);
+      logger.error('Error deleting video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -120,6 +121,7 @@ export const getVideoStream = async (req: Request, res: Response): Promise<void>
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
 
       if (start >= fileSize) {
+        logger.error('Requested range not satisfiable:', start, '>=', fileSize);
         res.status(416).send('Requested range not satisfiable\n' + start + ' >= ' + fileSize);
         return;
       }
@@ -145,9 +147,10 @@ export const getVideoStream = async (req: Request, res: Response): Promise<void>
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error streaming video:', error.message);
+      logger.error('Error streaming video:', error.message);
       res.status(500).json({ error: error.message });
     } else {
+      logger.error('An unknown error occurred while streaming video:', error);
       res.status(500).json({ error: 'An unknown error occurred' });
     }
   }

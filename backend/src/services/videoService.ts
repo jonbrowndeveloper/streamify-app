@@ -3,6 +3,7 @@ import path from 'path';
 import { Response } from 'express';
 import Video from '../models/Video';
 import AppSettings from '../models/AppSettings';
+import logger from '../logger';
 
 const parseFilename = (filename: string) => {
   const nameEndIndex = filename.indexOf('[') !== -1 ? filename.indexOf('[') : filename.indexOf('(');
@@ -71,7 +72,7 @@ export const scanAndInsertVideos = async (res: Response) => {
           totalVideosInserted++;
         }
       } catch (error: any) {
-        console.error(`Error processing file ${file}:`, error);
+        logger.error(`Error processing file ${file}:`, error);
         errors.push({ file, error: error instanceof Error ? error.message : 'Unknown error' });
       }
 
@@ -80,10 +81,10 @@ export const scanAndInsertVideos = async (res: Response) => {
     res.write(`event: end\ndata: ${JSON.stringify({ totalVideosFound, totalVideosInserted, errors })}\n\n`);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.error('Directory not found:', appSettings?.videoBasePath);
+      logger.error('Directory not found:', appSettings?.videoBasePath);
       res.write(`event: error\ndata: ${JSON.stringify({ error: 'Directory not found: ' + appSettings?.videoBasePath })}\n\n`);
     } else {
-      console.error('Error scanning videos:', error);
+      logger.error('Error scanning videos:', error);
       res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
     }
   } finally {

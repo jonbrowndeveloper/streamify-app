@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import Video from '../models/Video';
+import logger from '../logger';
 
 interface OmdbApiResponse {
   Title: string;
@@ -92,15 +93,15 @@ export const getOmdbData = async (req: Request, res: Response) => {
     res.end();
   } catch (error: any) {
     if (error.response?.data?.Error === 'Request limit reached!') {
-      console.error('OMDB API request limit reached:', error.response.data.Error);
+      logger.error('OMDB API request limit reached:', error.response.data.Error);
       res.write(`event: error\ndata: ${JSON.stringify({ error: `OMDB API request limit reached. Updated ${updatedCount} videos.` })}\n\n`);
       res.end();
       return;
     } else if (error instanceof Error) {
-      console.error('Error fetching OMDB data:', error.message);
+      logger.error('Error fetching OMDB data:', error.message);
       res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
     } else {
-      console.error('An unknown error occurred:', error);
+      logger.error('An unknown error occurred:', error);
       res.write(`event: error\ndata: ${JSON.stringify({ error: 'An unknown error occurred' })}\n\n`);
     }
     res.end();

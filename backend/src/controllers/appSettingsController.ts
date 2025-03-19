@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import AppSettings from '../models/AppSettings';
+import logger from '../logger';
 
 export const getAppSettings = async (req: Request, res: Response) => {
   try {
@@ -10,7 +11,7 @@ export const getAppSettings = async (req: Request, res: Response) => {
     res.status(200).json(appSettings);
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error fetching app settings:', error.message);
+      logger.error('Error fetching app settings:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
@@ -31,7 +32,7 @@ export const updateAppSettings = async (req: Request, res: Response) => {
     res.status(200).json(appSettings);
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error updating app settings:', error.message);
+      logger.error('Error updating app settings:', error.message);
       res.status(500).json({ error: error.message });
     } else {
       res.status(500).json({ error: 'An unknown error occurred' });
