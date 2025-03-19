@@ -31,6 +31,22 @@ router.get('/logs', (req, res) => {
   });
 });
 
+router.get('/clear-log', (req, res) => {
+  const app = req.query.app;
+  const logFile = path.join(LOG_DIR, `${app}.log`);
+
+  if (!fs.existsSync(logFile)) {
+    return res.status(404).send('Log file not found');
+  }
+
+  fs.writeFile(logFile, '', (err) => {
+    if (err) {
+      res.status(500).send('Error clearing log file');
+    }
+    res.status(200).send('Log file cleared successfully');
+  });
+});
+
 router.get('/start', (req, res) => {
   exec('docker-compose up -d', { shell: true }, (error, stdout, stderr) => {
     if (error) {

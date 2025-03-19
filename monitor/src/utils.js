@@ -24,7 +24,7 @@ let frontendProcess = null;
 
 const logWithTimestamp = (message) => {
   const timestamp = new Date().toISOString();
-  return `[${timestamp}] ${message}`;
+  return `[${timestamp}] ${message}\n`;
 };
 
 const pipeWithTimestamp = (stream, logStream) => {

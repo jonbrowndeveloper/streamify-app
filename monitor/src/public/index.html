@@ -30,9 +30,11 @@
       <h2>Backend Logs</h2>
       <div class="log-container" id="backendLogs"></div>
       <button onclick="window.location.href='/logs?app=backend'">View Full Logs</button>
+      <button onclick="fetch('/clear-log?app=backend').then(() => alert('Backend log cleared'))">Clear Log</button>
       <h2>Frontend Logs</h2>
       <div class="log-container" id="frontendLogs"></div>
       <button onclick="window.location.href='/logs?app=frontend'">View Full Logs</button>
+      <button onclick="fetch('/clear-log?app=frontend').then(() => alert('Frontend log cleared'))">Clear Log</button>
     </div>
     <div class="metrics">
       <h2>System Metrics</h2>
