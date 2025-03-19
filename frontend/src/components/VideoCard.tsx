@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Modal } from '@mui/material';
 import Image from 'next/image';
 import { Video } from '../types';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/Info';
 import VideoInfoModal from './VideoInfoModal';
-import { fetchAppSettings } from '../utils/api';
 
 interface VideoCardProps {
   video: Video;
@@ -27,16 +26,6 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
   const [playModalOpen, setPlayModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoBasePath, setVideoBasePath] = useState<string>('');
-
-  useEffect(() => {
-    const loadAppSettings = async () => {
-      const appSettings = await fetchAppSettings();
-      setVideoBasePath(appSettings.videoBasePath);
-    };
-
-    loadAppSettings();
-  }, []);
 
   const handleInfoClick = () => {
     setInfoModalOpen(true);
@@ -173,7 +162,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
             </Typography>
           ) : (
             <video
-              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}?basePath=${encodeURIComponent(videoBasePath)}`}
+              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}`}
               controls
               autoPlay
               style={{ width: '100%', height: '100%' }}

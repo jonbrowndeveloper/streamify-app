@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Box } from '@mui/material';
 import MovieRow from './MovieRow';
 import YearToggleButtons from './YearToggleButtons';

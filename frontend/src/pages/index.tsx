@@ -14,8 +14,12 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     const loadVideos = async () => {
-      const videoData = await fetchVideos();
-      setVideos(videoData);
+      try {
+        const videoData = await fetchVideos();
+        setVideos(videoData);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+      }
     };
 
     loadVideos();
