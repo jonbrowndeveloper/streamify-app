@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Modal } from '@mui/material';
 import Image from 'next/image';
 import { Video } from '../types';
@@ -27,15 +27,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  const handleInfoClick = () => {
+  const handleInfoClick = useCallback(() => {
     setInfoModalOpen(true);
-  };
+  }, []);
 
-  const handleInfoClose = () => {
+  const handleInfoClose = useCallback(() => {
     setInfoModalOpen(false);
-  };
+  }, []);
 
-  const handlePlayClick = async () => {
+  const handlePlayClick = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stream/${video.id}`);
       if (!response.ok) {
@@ -48,19 +48,19 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
     } catch (err) {
       setError('An error occurred while trying to fetch the video.');
     }
-  };
+  }, [video.id]);
 
-  const handlePlayClose = () => {
+  const handlePlayClose = useCallback(() => {
     setPlayModalOpen(false);
     setError(null);
-  };
+  }, []);
 
-  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+  const handleVideoError = useCallback((event: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const videoElement = event.currentTarget;
     console.log(videoElement.error);
     const errorMessage = videoElement.error?.message || 'An error occurred while trying to play the video.';
     setError(errorMessage);
-  };
+  }, []);
 
   const imageHeight = 300;
   const imageWidth = 200.5;
@@ -175,4 +175,4 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, isSelected, onClick }) => 
   );
 };
 
-export default VideoCard;
+export default React.memo(VideoCard);

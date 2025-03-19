@@ -24,12 +24,29 @@ const MovieRow: React.FC<MovieRowProps> = ({ genre, videos, selectedVideoId, onV
   const handleScroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {
       const videoWidth = 216;
-      const scrollAmount = videoWidth * 3;
-      const newScrollPosition = direction === 'left'
-        ? Math.max(scrollPosition - scrollAmount, 0)
-        : Math.min(scrollPosition + scrollAmount, rowRef.current.scrollWidth - rowRef.current.clientWidth);
-      rowRef.current.scrollTo({ left: newScrollPosition, behavior: 'smooth' });
-      setScrollPosition(newScrollPosition);
+      const visibleVideos = Math.floor(rowRef.current.clientWidth / videoWidth);
+      const scrollAmount = videoWidth * visibleVideos;
+
+      if (direction === 'left') {
+        const newScrollPosition = Math.max(scrollPosition - scrollAmount, 0);
+        if (newScrollPosition === scrollPosition) {
+          rowRef.current.style.transition = 'transform 0.2s ease-in-out';
+          rowRef.current.style.transform = 'translateX(-10px)';
+          setTimeout(() => {
+            if (rowRef.current) {
+              rowRef.current.style.transform = 'translateX(0)';
+            }
+          }, 200);
+        } else {
+          rowRef.current.scrollTo({ left: newScrollPosition, behavior: 'smooth' });
+          setScrollPosition(newScrollPosition);
+        }
+      } else if (direction === 'right') {
+        const maxScrollPosition = rowRef.current.scrollWidth - rowRef.current.clientWidth;
+        const newScrollPosition = Math.min(scrollPosition + scrollAmount, maxScrollPosition);
+        rowRef.current.scrollTo({ left: newScrollPosition, behavior: 'smooth' });
+        setScrollPosition(newScrollPosition);
+      }
     }
   };
 
