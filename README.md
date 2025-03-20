@@ -163,12 +163,12 @@ To manage the monitor service using `systemctl`, follow these steps:
 
     [Service]
     WorkingDirectory=/home/jb/streamify-app/monitor
-    ExecStart=/usr/bin/npm run start
+    ExecStart=/home/linuxbrew/.linuxbrew/bin/npm run start
     Restart=always
     User=jb
-    Environment=PATH=/usr/bin:/usr/local/bin
+    Environment=PATH=/home/linuxbrew/.linuxbrew/bin:/usr/bin:/bin
     Environment=NODE_ENV=production
-    ExecStartPre=/usr/bin/npm install
+    ExecStartPre=/home/linuxbrew/.linuxbrew/bin/npm install
 
     [Install]
     WantedBy=multi-user.target
