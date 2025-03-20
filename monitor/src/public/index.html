@@ -116,6 +116,21 @@
       }
     };
 
+    const fetchLogs = async () => {
+      try {
+      const backendLogsResponse = await fetch('/logs?app=backend');
+      const frontendLogsResponse = await fetch('/logs?app=frontend');
+
+      const backendLogs = await backendLogsResponse.text();
+      const frontendLogs = await frontendLogsResponse.text();
+
+      document.getElementById('backendLogs').innerText = backendLogs;
+      document.getElementById('frontendLogs').innerText = frontendLogs;
+      } catch (error) {
+      console.error('Error fetching logs:', error);
+      }
+    };
+
     fetchLogs();
     fetchHealthStatus();
     setInterval(fetchLogs, 5000);
