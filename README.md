@@ -150,6 +150,62 @@ To run the Postgress DB using Docker, you can use the provided `docker-compose.y
 docker-compose up
 ```
 
+## Setting up the Monitor Service with systemctl for Ubuntu Server
+
+To manage the monitor service using `systemctl`, follow these steps:
+
+1. Create a systemd service file:
+
+    ```ini
+    [Unit]
+    Description=Streamify Monitor Application
+    After=network.target
+
+    [Service]
+    WorkingDirectory=/home/jb/streamify-app/monitor
+    ExecStart=/usr/bin/npm run start
+    Restart=always
+    User=jb
+    Environment=PATH=/usr/bin:/usr/local/bin
+    Environment=NODE_ENV=production
+    ExecStartPre=/usr/bin/npm install
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    Replace `/home/jb/streamify-app/monitor` with the actual path to your project if different.
+
+2. Copy the service file to the systemd directory:
+
+    ```sh
+    sudo cp streamify-monitor.service /etc/systemd/system/
+    ```
+
+3. Reload the systemd daemon:
+
+    ```sh
+    sudo systemctl daemon-reload
+    ```
+
+4. Enable the service to start on boot:
+
+    ```sh
+    sudo systemctl enable streamify-monitor
+    ```
+
+5. Start the service:
+
+    ```sh
+    sudo systemctl start streamify-monitor
+    ```
+
+6. Check the status of the service:
+
+    ```sh
+    sudo systemctl status streamify-monitor
+    ```
+    
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
