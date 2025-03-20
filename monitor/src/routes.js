@@ -106,6 +106,13 @@ router.get('/stop', (req, res) => {
   });
 });
 
+router.get('/stop-monitor', (req, res) => {
+  setTimeout(() => {
+    process.exit(0);
+  }, 1000);
+  res.status(200).send('Monitor will stop shortly.');
+});
+
 router.get('/metrics', async (req, res) => {
   try {
     const metrics = await getSystemMetrics();

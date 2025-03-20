@@ -5,6 +5,7 @@ import videoRoutes from './routes/videoRoutes';
 import omdbRoutes from './routes/omdbRoutes';
 import scanRoutes from './routes/scanRoutes';
 import appSettingsRoutes from './routes/appSettingsRoutes';
+import healthCheckRoutes from './routes/healthCheckRoutes';
 import logger from './logger';
 
 const app = express();
@@ -18,6 +19,7 @@ app.use('/api', videoRoutes);
 app.use('/api', omdbRoutes);
 app.use('/api', scanRoutes);
 app.use('/api', appSettingsRoutes);
+app.use('/api', healthCheckRoutes);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(`Error: ${err.message}`);
