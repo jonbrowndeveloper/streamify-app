@@ -1,52 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor</title>
   <style>
-    body { font-family: Arial, sans-serif; }
-    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-    .logs { margin-top: 20px; }
-    .log-container { max-height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
-    .metrics { margin-top: 20px; }
-    .buttons { margin-top: 20px; }
-    .disk-container { margin-top: 20px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
-    .disk-container h3 { margin-top: 0; }
-    textarea { width: 100%; height: 200px; }
-    canvas { width: 100%; height: 200px; }
-    .health-status { display: flex; align-items: center; margin-bottom: 10px; }
-    .health-status span { margin-left: 10px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .logs {
+      margin-top: 20px;
+    }
+
+    .log-container {
+      max-height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .metrics {
+      margin-top: 20px;
+    }
+
+    .buttons {
+      margin-top: 20px;
+    }
+
+    .disk-container {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .disk-container h3 {
+      margin-top: 0;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 200px;
+    }
+
+    .health-status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .health-status span {
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
     .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
     .green { background-color: green; }
     .red { background-color: red; }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Monitor</h1>
     <div class="health-status">
       <div id="backend-status" class="dot"></div>
-      <span onclick="window.location.href='/api/health-check?app=backend'">Backend</span>
+      <span>Backend</span>
     </div>
     <div class="health-status">
       <div id="frontend-status" class="dot"></div>
-      <span onclick="window.location.href='/api/health-check?app=frontend'">Frontend</span>
+      <span>Frontend</span>
     </div>
     <div class="buttons">
       <button onclick="fetch('/start-db').then(() => alert('DB Started'))" title="Start DB">Start DB</button>
-      <button onclick="fetch('/start-backend').then(() => alert('Backend Started'))" title="Start Backend">Start Backend</button>
-      <button onclick="fetch('/start-frontend').then(() => alert('Frontend Started'))" title="Start Frontend">Start Frontend</button>
-      <button onclick="startAll()" title="Start All">Start All</button>
+      <button
+        onclick="fetch('/start-backend').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))">Start
+        Backend</button>
+      <button
+        onclick="fetch('/start-frontend').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))"
+        title="Start Frontend">Start Frontend</button>
       <br>
-      <button onclick="fetch('/stop-db').then(() => alert('DB Stopped'))" title="Stop DB">Stop DB</button>
-      <button onclick="fetch('/stop-backend').then(() => alert('Backend Stopped'))" title="Stop Backend">Stop Backend</button>
-      <button onclick="fetch('/stop-frontend').then(() => alert('Frontend Stopped'))" title="Stop Frontend">Stop Frontend</button>
-      <button onclick="stopAll()" title="Stop All">Stop All</button>
+      <button
+        onclick="fetch('/stop').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))"
+        title="Stop All">Stop All</button>
       <br>
-      <button onclick="fetch('/git-pull').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))">Git Pull</button>
-      <button onclick="fetch('/update').then(() => alert('Updated'))">Update</button>
-      <button onclick="fetch('/update?force=true').then(() => alert('Force Updated'))">Force Update</button>
+      <button
+        onclick="fetch('/git-pull').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))">Git
+        Pull</button>
     </div>
     <div class="logs">
       <h2>Backend Logs</h2>
@@ -64,6 +118,8 @@
       <div id="memoryInfo"></div>
       <canvas id="memChart"></canvas>
       <div id="diskCharts"></div>
+      <canvas id="fsSizeChart"></canvas>
+      <canvas id="diskIOChart"></canvas>
     </div>
   </div>
   <script src="/socket.io/socket.io.js"></script>
@@ -73,26 +129,28 @@
     const socket = io();
 
     const fetchHealthStatus = async () => {
-      try {
-        const backendResponse = await fetch('/api/health-check?app=backend');
-        const frontendResponse = await fetch('/api/health-check?app=frontend');
-
-        const backendHealth = backendResponse.headers.get('content-type')?.includes('application/json')
-          ? await backendResponse.json()
-          : { status: 'unhealthy' };
-
-        const frontendHealth = frontendResponse.headers.get('content-type')?.includes('application/json')
-          ? await frontendResponse.json()
-          : { status: 'unhealthy' };
-
-        document.getElementById('backend-status').className = backendHealth.status === 'healthy' ? 'dot green' : 'dot red';
-        document.getElementById('frontend-status').className = frontendHealth.status === 'healthy' ? 'dot green' : 'dot red';
-      } catch (error) {
-        console.error('Error fetching health status:', error);
+    try {
+      // Check backend process status
+      const backendRunning = await fetch('/status-backend').then(res => res.json());
+      if (backendRunning.running) {
+        document.getElementById('backend-status').className = 'dot green';
+      } else {
         document.getElementById('backend-status').className = 'dot red';
+      }
+
+      // Check frontend process status
+      const frontendRunning = await fetch('/status-frontend').then(res => res.json());
+      if (frontendRunning.running) {
+        document.getElementById('frontend-status').className = 'dot green';
+      } else {
         document.getElementById('frontend-status').className = 'dot red';
       }
-    };
+    } catch (error) {
+      console.error('Error fetching process status:', error);
+      document.getElementById('backend-status').className = 'dot red';
+      document.getElementById('frontend-status').className = 'dot red';
+    }
+  };
 
     const startAll = async () => {
       try {
@@ -119,16 +177,16 @@
 
     const fetchLogs = async () => {
       try {
-      const backendLogsResponse = await fetch('/logs?app=backend');
-      const frontendLogsResponse = await fetch('/logs?app=frontend');
+        const backendLogsResponse = await fetch('/logs?app=backend');
+        const frontendLogsResponse = await fetch('/logs?app=frontend');
 
-      const backendLogs = await backendLogsResponse.text();
-      const frontendLogs = await frontendLogsResponse.text();
+        const backendLogs = await backendLogsResponse.text();
+        const frontendLogs = await frontendLogsResponse.text();
 
-      document.getElementById('backendLogs').innerText = backendLogs;
-      document.getElementById('frontendLogs').innerText = frontendLogs;
+        document.getElementById('backendLogs').innerText = backendLogs;
+        document.getElementById('frontendLogs').innerText = frontendLogs;
       } catch (error) {
-      console.error('Error fetching logs:', error);
+        console.error('Error fetching logs:', error);
       }
     };
 
@@ -138,4 +196,5 @@
     setInterval(fetchHealthStatus, 5000);
   </script>
 </body>
+
 </html>

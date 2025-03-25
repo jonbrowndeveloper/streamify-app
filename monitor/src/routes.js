@@ -2,18 +2,11 @@ const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const { startBackend, startFrontend, gitPull, checkForUpdates, logWithTimestamp, backendProcess, frontendProcess, treeKill, getSystemMetrics } = require('./utils');
+const { startBackend, startFrontend, checkProcess, gitPull, stop, logWithTimestamp, getSystemMetrics } = require('./utils');
 const systeminformation = require('systeminformation');
 
 const router = express.Router();
 const LOG_DIR = path.resolve(__dirname, '../logs');
-
-router.get('/update', (req, res) => {
-  const force = req.query.force === 'true';
-  checkForUpdates(force)
-    .then(() => res.status(200).send('Update process initiated.'))
-    .catch((error) => res.status(500).send(`Error initiating update process: ${error.message}`));
-});
 
 router.get('/logs', (req, res) => {
   const app = req.query.app;
@@ -59,24 +52,24 @@ router.get('/start-db', (req, res) => {
   });
 });
 
-router.get('/start-backend', (req, res) => {
-  startBackend((backendError) => {
-    if (!backendError) {
-      res.status(200).send('Backend started successfully.');
-    } else {
-      res.status(500).send(`Error starting backend service: ${backendError.message}`);
-    }
-  });
+router.get('/start-backend', async (req, res) => {
+  try {
+    await startBackend();
+    res.status(200).send('Backend started successfully.');
+  } catch (error) {
+    console.error(logWithTimestamp(`Error starting backend: ${error.message}`));
+    res.status(500).send(`Error starting backend: ${error.message}`);
+  }
 });
 
-router.get('/start-frontend', (req, res) => {
-  startFrontend((frontendError) => {
-    if (!frontendError) {
-      res.status(200).send('Frontend started successfully.');
-    } else {
-      res.status(500).send(`Error starting frontend service: ${frontendError.message}`);
-    }
-  });
+router.get('/start-frontend', async (req, res) => {
+  try {
+    await startFrontend();
+    res.status(200).send('Frontend started successfully.');
+  } catch (error) {
+    console.error(logWithTimestamp(`Error starting frontend: ${error.message}`));
+    res.status(500).send(`Error starting frontend: ${error.message}`);
+  }
 });
 
 router.get('/git-pull', (req, res) => {
@@ -89,49 +82,15 @@ router.get('/git-pull', (req, res) => {
   });
 });
 
-router.get('/stop-db', (req, res) => {
-  exec('docker-compose down', { shell: true }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(logWithTimestamp(`Error stopping PostgreSQL: ${error.message}`));
-      return res.status(500).send(`Error stopping PostgreSQL: ${error.message}`);
+router.get('/stop', async (req, res) => {
+  try {
+    const processes = await stop();
+    if (processes.length === 0) {
+      return res.status(404).send('No processes running to stop.');
     }
-    console.log(logWithTimestamp(`PostgreSQL stop stdout: ${stdout}`));
-    console.error(logWithTimestamp(`PostgreSQL stop stderr: ${stderr}`));
-    res.status(200).send('Database stopped successfully.');
-  });
-});
-
-router.get('/stop-backend', (req, res) => {
-  if (backendProcess) {
-    treeKill(backendProcess.pid, 'SIGKILL', (err) => {
-      if (err) {
-        console.error(`Failed to kill backend process: ${err.message}`);
-        return res.status(500).send(`Failed to kill backend process: ${err.message}`);
-      } else {
-        console.log('Backend service stopped.');
-        backendProcess = null;
-        res.status(200).send('Backend stopped successfully.');
-      }
-    });
-  } else {
-    res.status(200).send('Backend is not running.');
-  }
-});
-
-router.get('/stop-frontend', (req, res) => {
-  if (frontendProcess) {
-    treeKill(frontendProcess.pid, 'SIGKILL', (err) => {
-      if (err) {
-        console.error(`Failed to kill frontend process: ${err.message}`);
-        return res.status(500).send(`Failed to kill frontend process: ${err.message}`);
-      } else {
-        console.log('Frontend service stopped.');
-        frontendProcess = null;
-        res.status(200).send('Frontend stopped successfully.');
-      }
-    });
-  } else {
-    res.status(200).send('Frontend is not running.');
+    res.send(`All processes stopped.\nProcesses: ${processes.join(', ')}`);
+  } catch (error) {
+    res.status(500).send(`Error stopping processes: ${error.message}`);
   }
 });
 
@@ -144,20 +103,22 @@ router.get('/stop-monitor', (req, res) => {
 
 router.get('/metrics', async (req, res) => {
   try {
+    console.log(logWithTimestamp('Fetching system metrics...'));
     const metrics = await getSystemMetrics();
     res.json(metrics);
   } catch (error) {
+    console.error(logWithTimestamp(`Error in /metrics route: ${error.message}`));
     res.status(500).send(`Error fetching metrics: ${error.message}`);
   }
 });
 
-router.get('/api/health-check', (req, res) => {
-  const app = req.query.app;
-  if (app === 'backend' || app === 'frontend') {
-    res.status(200).json({ status: 'healthy' });
-  } else {
-    res.status(400).json({ error: 'Invalid app specified' });
-  }
+router.get('/status-backend', (req, res) => {
+  const process = checkProcess('backend');
+  res.json({ running: process });
+});
+
+router.get('/status-frontend', (req, res) => {
+  res.json({ running: checkProcess('frontend') });
 });
 
 router.get('/', (req, res) => {
