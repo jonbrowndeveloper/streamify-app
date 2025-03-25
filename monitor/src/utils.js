@@ -38,90 +38,110 @@ const pipeWithTimestamp = (stream, logStream) => {
   });
 };
 
-const updateBackend = (callback) => {
-  console.log(logWithTimestamp('Updating backend...'));
-  exec('cd ../backend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(logWithTimestamp(`Error updating backend: ${error.message}`));
-      callback(error);
+const startBackend = (callback) => {
+  console.log(logWithTimestamp('Starting backend...'));
+
+  exec('npm install', { cwd: path.resolve(__dirname, '../../backend'), shell: true }, (installError, installStdout, installStderr) => {
+    if (installError) {
+      console.error(logWithTimestamp(`Error installing backend dependencies: ${installError.message}`));
+      callback(installError);
       return;
     }
-    console.log(logWithTimestamp(`Backend update stdout: ${stdout}`));
-    console.error(logWithTimestamp(`Backend update stderr: ${stderr}`));
+    console.log(logWithTimestamp(`Backend install stdout: ${installStdout}`));
+    console.error(logWithTimestamp(`Backend install stderr: ${installStderr}`));
 
-    if (backendProcess) {
-      treeKill(backendProcess.pid, 'SIGKILL', (err) => {
-        if (err) {
-          console.error(logWithTimestamp(`Failed to kill backend process: ${err.message}`));
-        } else {
-          console.log(logWithTimestamp('Existing backend process stopped.'));
-        }
+    exec('npm run build', { cwd: path.resolve(__dirname, '../../backend'), shell: true }, (buildError, buildStdout, buildStderr) => {
+      if (buildError) {
+        console.error(logWithTimestamp(`Error building backend: ${buildError.message}`));
+        callback(buildError);
+        return;
+      }
+      console.log(logWithTimestamp(`Backend build stdout: ${buildStdout}`));
+      console.error(logWithTimestamp(`Backend build stderr: ${buildStderr}`));
+
+      const backendCommand = 'npm run start';
+      console.log(logWithTimestamp(`Executing command: ${backendCommand}`));
+      backendProcess = exec(backendCommand, {
+        cwd: path.resolve(__dirname, '../../backend'),
+        detached: true,
+        shell: true
       });
-      backendProcess = null;
-    }
 
-    const backendCommand = 'npm run start';
-    console.log(logWithTimestamp(`Executing command: ${backendCommand}`));
-    backendProcess = exec(backendCommand, {
-      cwd: path.resolve(__dirname, '../../backend'),
-      detached: true,
-      shell: true
+      pipeWithTimestamp(backendProcess.stdout, backendLogStream);
+      pipeWithTimestamp(backendProcess.stderr, backendLogStream);
+
+      backendProcess.on('error', (err) => {
+        console.error(logWithTimestamp(`Failed to start backend process: ${err.message}`));
+      });
+
+      backendProcess.unref();
+      console.log(logWithTimestamp('Backend server started.'));
+      callback(null);
     });
-
-    pipeWithTimestamp(backendProcess.stdout, backendLogStream);
-    pipeWithTimestamp(backendProcess.stderr, backendLogStream);
-
-    backendProcess.on('error', (err) => {
-      console.error(logWithTimestamp(`Failed to start backend process: ${err.message}`));
-    });
-
-    backendProcess.unref();
-    console.log(logWithTimestamp('Backend server started.'));
-    callback(null);
   });
 };
 
-const updateFrontend = (callback) => {
-  console.log(logWithTimestamp('Updating frontend...'));
-  exec('cd ../frontend && npm install && npm run build', { shell: true }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(logWithTimestamp(`Error updating frontend: ${error.message}`));
-      callback(error);
+const startFrontend = (callback) => {
+  console.log(logWithTimestamp('Starting frontend...'));
+
+  exec('npm install', { cwd: path.resolve(__dirname, '../../frontend'), shell: true }, (installError, installStdout, installStderr) => {
+    if (installError) {
+      console.error(logWithTimestamp(`Error installing frontend dependencies: ${installError.message}`));
+      callback(installError);
       return;
     }
-    console.log(logWithTimestamp(`Frontend update stdout: ${stdout}`));
-    console.error(logWithTimestamp(`Frontend update stderr: ${stderr}`));
+    console.log(logWithTimestamp(`Frontend install stdout: ${installStdout}`));
+    console.error(logWithTimestamp(`Frontend install stderr: ${installStderr}`));
 
-    if (frontendProcess) {
-      treeKill(frontendProcess.pid, 'SIGKILL', (err) => {
-        if (err) {
-          console.error(logWithTimestamp(`Failed to kill frontend process: ${err.message}`));
-        } else {
-          console.log(logWithTimestamp('Existing frontend process stopped.'));
-        }
+    exec('npm run build', { cwd: path.resolve(__dirname, '../../frontend'), shell: true }, (buildError, buildStdout, buildStderr) => {
+      if (buildError) {
+        console.error(logWithTimestamp(`Error building frontend: ${buildError.message}`));
+        callback(buildError);
+        return;
+      }
+      console.log(logWithTimestamp(`Frontend build stdout: ${buildStdout}`));
+      console.error(logWithTimestamp(`Frontend build stderr: ${buildStderr}`));
+
+      const frontendCommand = 'npm run start';
+      console.log(logWithTimestamp(`Executing command: ${frontendCommand}`));
+      frontendProcess = exec(frontendCommand, {
+        cwd: path.resolve(__dirname, '../../frontend'),
+        detached: true,
+        shell: true
       });
-      frontendProcess = null;
-    }
 
-    const frontendCommand = 'npm run start';
-    console.log(logWithTimestamp(`Executing command: ${frontendCommand}`));
-    frontendProcess = exec(frontendCommand, {
-      cwd: path.resolve(__dirname, '../../frontend'),
-      detached: true,
-      shell: true
+      pipeWithTimestamp(frontendProcess.stdout, frontendLogStream);
+      pipeWithTimestamp(frontendProcess.stderr, frontendLogStream);
+
+      frontendProcess.on('error', (err) => {
+        console.error(logWithTimestamp(`Failed to start frontend process: ${err.message}`));
+      });
+
+      frontendProcess.unref();
+      console.log(logWithTimestamp('Frontend server started.'));
+      callback(null);
     });
-
-    pipeWithTimestamp(frontendProcess.stdout, frontendLogStream);
-    pipeWithTimestamp(frontendProcess.stderr, frontendLogStream);
-
-    frontendProcess.on('error', (err) => {
-      console.error(logWithTimestamp(`Failed to start frontend process: ${err.message}`));
-    });
-
-    frontendProcess.unref();
-    console.log(logWithTimestamp('Frontend server started.'));
-    callback(null);
   });
+};
+
+const gitPull = async (callback) => {
+  try {
+    console.log(logWithTimestamp('Checking for updates...'));
+    await git.fetch();
+    const status = await git.status();
+    if (status.behind > 0) {
+      console.log(logWithTimestamp('Updates available. Pulling changes...'));
+      await git.pull();
+      console.log(logWithTimestamp('Git pull completed successfully.'));
+      callback(null);
+    } else {
+      console.log(logWithTimestamp('No updates available.'));
+      callback(null);
+    }
+  } catch (error) {
+    console.error(logWithTimestamp(`Error pulling updates: ${error.message}`));
+    callback(error);
+  }
 };
 
 const checkForUpdates = async (force = false) => {
@@ -166,9 +186,9 @@ const getSystemMetrics = async () => {
 };
 
 module.exports = {
-  updateBackend,
-  updateFrontend,
-  checkForUpdates,
+  startBackend,
+  startFrontend,
+  gitPull,
   logWithTimestamp,
   pipeWithTimestamp,
   backendLogStream,

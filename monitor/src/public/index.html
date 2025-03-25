@@ -44,6 +44,7 @@
       <button onclick="fetch('/stop-frontend').then(() => alert('Frontend Stopped'))" title="Stop Frontend">Stop Frontend</button>
       <button onclick="stopAll()" title="Stop All">Stop All</button>
       <br>
+      <button onclick="fetch('/git-pull').then(response => response.text()).then(alert).catch(error => alert('Error: ' + error.message))">Git Pull</button>
       <button onclick="fetch('/update').then(() => alert('Updated'))">Update</button>
       <button onclick="fetch('/update?force=true').then(() => alert('Force Updated'))">Force Update</button>
     </div>

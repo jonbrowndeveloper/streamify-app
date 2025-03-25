@@ -2,7 +2,7 @@ const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const { updateBackend, updateFrontend, checkForUpdates, logWithTimestamp, pipeWithTimestamp, backendLogStream, frontendLogStream, backendProcess, frontendProcess, treeKill, getSystemMetrics } = require('./utils');
+const { startBackend, startFrontend, gitPull, checkForUpdates, logWithTimestamp, backendProcess, frontendProcess, treeKill, getSystemMetrics } = require('./utils');
 const systeminformation = require('systeminformation');
 
 const router = express.Router();
@@ -60,21 +60,31 @@ router.get('/start-db', (req, res) => {
 });
 
 router.get('/start-backend', (req, res) => {
-  updateBackend((backendError) => {
+  startBackend((backendError) => {
     if (!backendError) {
       res.status(200).send('Backend started successfully.');
     } else {
-      res.status(500).send('Error starting backend service.');
+      res.status(500).send(`Error starting backend service: ${backendError.message}`);
     }
   });
 });
 
 router.get('/start-frontend', (req, res) => {
-  updateFrontend((frontendError) => {
+  startFrontend((frontendError) => {
     if (!frontendError) {
       res.status(200).send('Frontend started successfully.');
     } else {
-      res.status(500).send('Error starting frontend service.');
+      res.status(500).send(`Error starting frontend service: ${frontendError.message}`);
+    }
+  });
+});
+
+router.get('/git-pull', (req, res) => {
+  gitPull((gitError) => {
+    if (!gitError) {
+      res.status(200).send('Git pull completed successfully.');
+    } else {
+      res.status(500).send(`Error pulling updates: ${gitError.message}`);
     }
   });
 });
